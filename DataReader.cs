@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Zero2Unpacker
 {
@@ -11,10 +8,12 @@ namespace Zero2Unpacker
         public long startingPosition = 0;
         public long endingPosition = 0;
         public long fileSize = 0;
+        public string fileName;
     }
 
     public class DataReader
     {
+        public byte[] delessHeader = new byte[] {0x4c, 0x45, 0x53, 0x53};
         private string fileName;
         private string directory;
         private long img_size;
@@ -33,38 +32,38 @@ namespace Zero2Unpacker
 
         public void SplitDeLESSArchives()
         {
-            var currFile = new DeLESSFile();
-            currFile.startingPosition = 0;
+            var currFile = new DeLESSFile
+            {
+                startingPosition = 0
+            };
 
-            var pattern = new byte[] {0x4c, 0x45, 0x53, 0x53};
+            var pattern = 
 
             // Ships the initial DeLESS Header
             this.dataStream.BaseStream.Position = 0x8;
 
             var searchPosition = 0;
 
-            while (this.dataStream.BaseStream.Position < img_size) //Loop until we reach the end of the file
+            while (this.dataStream.BaseStream.Position < this.img_size) //Loop until we reach the end of the file
             {
-                var latestbyte = this.dataStream.ReadByte();
+                var latestByte = this.dataStream.ReadByte();
 
-                if (latestbyte == -1)
+                if (latestByte == -1)
                 {
-                    break; //We have reached the end of the file
+                    break;
                 }
 
-                if (latestbyte != pattern[searchPosition])
+                if (latestByte != this.delessHeader[searchPosition])
                 {
                     searchPosition = 0;
-                    //break; //We have reached the end of the file
                 }
-
-                else if (latestbyte == pattern[searchPosition])
+                else if (latestByte == this.delessHeader[searchPosition])
                 {
                     searchPosition++;
-                    if (searchPosition == pattern.Length)
+                    if (searchPosition == this.delessHeader.Length)
                     {
                         currFile.endingPosition = this.dataStream.BaseStream.Position - 0x5;
-                        delessFiles.Add(currFile);
+                        this.delessFiles.Add(currFile);
 
                         currFile = new DeLESSFile()
                         {
@@ -77,8 +76,33 @@ namespace Zero2Unpacker
             }
 
             currFile.endingPosition = this.dataStream.BaseStream.Position;
-            delessFiles.Add(currFile);
+            this.delessFiles.Add(currFile);
+        }
 
+        public static void RunDeLESS()
+        {
+            var directoryName = "";
+            var destfolderName = "";
+            var destfileName = "";
+
+            var command = $" {directoryName}\\{destfolderName.Replace("..", "")}{destfileName}";
+            var path = Directory.GetCurrentDirectory();
+
+            System.Diagnostics.Process process = new System.Diagnostics.Process();
+
+            process.StartInfo.FileName = $"{path}\\DeLESS.exe";
+            process.StartInfo.WorkingDirectory = path;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.Arguments = command;
+            process.Start();
+            process.WaitForExit();
+
+            var dname = $"{directoryName}\\{destfolderName.Replace("..", "")}{destfileName}";
+            var temp = $"{directoryName}\\{destfolderName.Replace("..", "")}{destfileName}.LED";
+
+            File.Delete(dname);
+            File.Move(temp, dname);
         }
     }
 }
