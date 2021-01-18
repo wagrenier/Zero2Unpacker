@@ -37,8 +37,6 @@ namespace Zero2Unpacker
                 startingPosition = 0
             };
 
-            var pattern = 
-
             // Ships the initial DeLESS Header
             this.dataStream.BaseStream.Position = 0x8;
 
