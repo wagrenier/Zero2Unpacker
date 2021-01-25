@@ -141,19 +141,19 @@ namespace Zero2Unpacker
                 else if (currByte == this.tim2Header[searchPosition])
                 {
                     searchPosition++;
-                    if (searchPosition != this.tim2Header.Length)
+                    if (searchPosition == this.tim2Header.Length)
                     {
-                        fileBuf.Add(currByte);
+                        fileBuf.AddRange(this.tim2Header);
                         fileFound = true;
                     }
                 }
             }
 
-            if (fileBuf.Count > 0)
+            if (fileFound)
             {
                 using var writer = new BinaryWriter(File.Open(extensionFilename, FileMode.Create));
                 writer.Write(fileBuf.ToArray());
-                File.Delete(filename);
+                //File.Delete(filename);
                 //File.Delete(filename.Replace(".LED", ""));
             }
         }
