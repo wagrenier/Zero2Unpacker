@@ -14,16 +14,13 @@ namespace Zero2Unpacker
              *
              */
 
-            var dataReader = new DataReader("IMG_BD.BIN", ".");
+            var dataReader = new Zero2ArchiveHandler("IMG_BD.BIN", "D:\\DecompressFiles");
 
             dataReader.SplitDeLESSArchives();
 
             Console.WriteLine($"Total files found : {dataReader.delessFiles.Count}");
 
-            foreach (var file in dataReader.delessFiles)
-            {
-                Console.WriteLine($"Starting pos: {file.startingPosition}, ending pos: {file.endingPosition}");
-            }
+            dataReader.RunDeLESS();
         }
     }
 }
