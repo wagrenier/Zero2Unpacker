@@ -14,7 +14,7 @@ namespace Zero2Unpacker
              *
              */
 
-            var dataReader = new Zero2ArchiveHandler("IMG_BD.BIN", "D:\\DecompressFiles");
+            var dataReader = new Zero2ArchiveHandler("IMG_BD.BIN", "D:/DecompressFiles");
 
             dataReader.SplitDeLESSArchives();
 

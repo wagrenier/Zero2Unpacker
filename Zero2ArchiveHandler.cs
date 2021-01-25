@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Zero2Unpacker
 {
@@ -16,6 +17,7 @@ namespace Zero2Unpacker
     public class Zero2ArchiveHandler
     {
         public byte[] delessHeader = new byte[] {0x4c, 0x45, 0x53, 0x53};
+        public byte[] tim2Header = new byte[] { 0x54, 0x49, 0x4D, 0x32 };
         private string fileName;
         private string directory;
         private long img_size;
@@ -29,8 +31,8 @@ namespace Zero2Unpacker
         {
             this.fileName = fileName;
             this.directory = directory;
-            this.dataStream = new BinaryReader(new FileStream($"{this.directory}\\{this.fileName}", FileMode.Open, FileAccess.Read));
-            this.fileInfo = new FileInfo($"{this.directory}\\{this.fileName}");
+            this.dataStream = new BinaryReader(new FileStream($"{this.directory}/{this.fileName}", FileMode.Open, FileAccess.Read));
+            this.fileInfo = new FileInfo($"{this.directory}/{this.fileName}");
             this.img_size = this.fileInfo.Length;
         }
 
@@ -119,9 +121,41 @@ namespace Zero2Unpacker
             this.fileID++;
         }
 
-        public void TrimTIM2EmptyHeader(string filename)
+        public void TrimTIM2EmptyHeader(string filename, string extensionFilename)
         {
+            var fileBytes = File.ReadAllBytes(filename);
+            var searchPosition = 0;
+            var fileBuf = new List<byte>();
+            var fileFound = false;
 
+            foreach (var currByte in fileBytes)
+            {
+                if (fileFound)
+                {
+                    fileBuf.Add(currByte);
+                }
+                else if (currByte != this.tim2Header[searchPosition])
+                {
+                    searchPosition = 0;
+                }
+                else if (currByte == this.tim2Header[searchPosition])
+                {
+                    searchPosition++;
+                    if (searchPosition != this.tim2Header.Length)
+                    {
+                        fileBuf.Add(currByte);
+                        fileFound = true;
+                    }
+                }
+            }
+
+            if (fileBuf.Count > 0)
+            {
+                using var writer = new BinaryWriter(File.Open(extensionFilename, FileMode.Create));
+                writer.Write(fileBuf.ToArray());
+                File.Delete(filename);
+                //File.Delete(filename.Replace(".LED", ""));
+            }
         }
 
         public void RunDeLESS()
@@ -131,7 +165,7 @@ namespace Zero2Unpacker
                 Console.WriteLine($"Unarchiving file: {delessFile.fileName}");
                 System.Diagnostics.Process process = new System.Diagnostics.Process();
 
-                process.StartInfo.FileName = $"{this.directory}\\DeLESS.exe";
+                process.StartInfo.FileName = $"{this.directory}/DeLESS.exe";
                 process.StartInfo.WorkingDirectory = this.directory;
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.CreateNoWindow = false;
@@ -142,17 +176,14 @@ namespace Zero2Unpacker
 
                 try
                 {
-                    //File.Delete(delessFile.fileName);
-                    File.Move($"{delessFile.fileName}.LED", $"{this.directory}/Zero/zeroFile{delessFile.fileID}.tim2");
-                    //File.Delete($"{delessFile.fileName}.LED");
+                    this.TrimTIM2EmptyHeader($"{delessFile.fileName}.LED",
+                        $"{this.directory}/Zero/zeroFile{delessFile.fileID}.tim2");
                     Console.WriteLine($"File: {delessFile.fileName}, decompressed!");
                 }
                 catch (Exception e)
                 {
                     Console.Error.WriteLine($"Failed to create file for {delessFile.fileName}!");
                 }
-
-                
             }
         }
     }
