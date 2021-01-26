@@ -7,59 +7,75 @@ namespace Zero2Unpacker
 {
     public class DeLESSFile
     {
-        public long startingPosition = 0;
-        public long endingPosition = 0;
-        public long fileSize = 0;
-        public string fileName;
-        public int fileID = 0;
+        public long StartingPosition = 0;
+        public long EndingPosition = 0;
+        public long FileSize = 0;
+        public string FileName;
+        public int FileId = 0;
     }
 
     public class Zero2ArchiveHandler
     {
+        public int delessHeaderSize = 0x8;
         public byte[] delessHeader = new byte[] {0x4c, 0x45, 0x53, 0x53};
         public byte[] tim2Header = new byte[] { 0x54, 0x49, 0x4D, 0x32 };
         private string fileName;
         private string directory;
         private long img_size;
         private FileInfo fileInfo;
-        private BinaryReader dataStream;
         public List<DeLESSFile> delessFiles = new List<DeLESSFile>();
-        public List<byte> fileBuffer = new List<byte>();
         public int fileID = 0;
 
         public Zero2ArchiveHandler(string fileName, string directory)
         {
             this.fileName = fileName;
             this.directory = directory;
-            this.dataStream = new BinaryReader(new FileStream($"{this.directory}/{this.fileName}", FileMode.Open, FileAccess.Read));
             this.fileInfo = new FileInfo($"{this.directory}/{this.fileName}");
             this.img_size = this.fileInfo.Length;
         }
 
-        public void SplitDeLESSArchives()
+        public void BuildAlreadyExistingDeLESSArchive(int numberDeLESSArchives)
         {
-            var currFile = new DeLESSFile
+            for (var i = 0; i < numberDeLESSArchives; i++)
             {
-                startingPosition = 0,
-                fileName = $"{this.directory}/Zero/zeroFile{this.fileID}.LESS"
+                var currentFile = new DeLESSFile()
+                {
+                    FileId = this.fileID,
+                    FileName = $"{this.directory}/Zero/zeroFile{this.fileID}.LESS"
+                };
+
+                this.delessFiles.Add(currentFile);
+                this.fileID++;
+            }
+        }
+
+        public void SplitArchives()
+        { 
+            using var gameArchiveBinReader = new BinaryReader(new FileStream($"{this.directory}/{this.fileName}", FileMode.Open, FileAccess.Read));
+            var fileBuffer = new List<byte>();
+
+            var currentFile = new DeLESSFile
+            {
+                StartingPosition = 0,
+                FileName = $"{this.directory}/Zero/zeroFile{this.fileID}.LESS"
             };
 
             // Skips the initial DeLESS Header
-            this.SkipHeaderNewFile();
+            this.SkipHeaderNewFile(gameArchiveBinReader, this.delessHeaderSize, fileBuffer);
 
             var searchPosition = 0;
 
             //Loop until we reach the end of the file
-            while (this.dataStream.BaseStream.Position < this.img_size) 
+            while (gameArchiveBinReader.BaseStream.Position < this.img_size) 
             {
-                var latestByte = this.dataStream.ReadByte();
+                var latestByte = gameArchiveBinReader.ReadByte();
 
                 if (latestByte == -1)
                 {
                     break;
                 }
 
-                this.fileBuffer.Add(latestByte);
+                fileBuffer.Add(latestByte);
 
                 if (latestByte != this.delessHeader[searchPosition])
                 {
@@ -74,50 +90,50 @@ namespace Zero2Unpacker
                     }
 
                     // When the bytes fully match the header
-                    currFile.endingPosition = this.dataStream.BaseStream.Position - 0x9;
-                    this.delessFiles.Add(currFile);
+                    currentFile.EndingPosition = gameArchiveBinReader.BaseStream.Position - 0x9;
+                    this.delessFiles.Add(currentFile);
 
-                    this.fileBuffer.RemoveRange(this.fileBuffer.Count - 9, 8);
+                    fileBuffer.RemoveRange(fileBuffer.Count - 9, this.delessHeaderSize);
 
-                    this.fileBuffer[^1] = 0x0;
+                    fileBuffer[^1] = 0x0;
 
-                    this.CreateNewFile();
+                    this.CreateNewFile(fileBuffer.ToArray(), $"{this.directory}/Zero/zeroFile{this.fileID}.LESS");
 
                     // Reset the position to the beginning of the previous file
-                    this.dataStream.BaseStream.Position -= 0x8;
+                    gameArchiveBinReader.BaseStream.Position -= this.delessHeaderSize;
 
-                    currFile = new DeLESSFile()
+                    currentFile = new DeLESSFile()
                     {
-                        startingPosition = this.dataStream.BaseStream.Position,
-                        fileID = this.fileID,
-                        fileName = $"{this.directory}/Zero/zeroFile{this.fileID}.LESS"
+                        StartingPosition = gameArchiveBinReader.BaseStream.Position,
+                        FileId = this.fileID,
+                        FileName = $"{this.directory}/Zero/zeroFile{this.fileID}.LESS"
                     };
 
                     // Clear file buffer
-                    this.fileBuffer.Clear();
+                    fileBuffer.Clear();
                     searchPosition = 0;
-                    this.SkipHeaderNewFile();
+                    this.SkipHeaderNewFile(gameArchiveBinReader, this.delessHeaderSize, fileBuffer);
                 }
             }
 
-            currFile.endingPosition = this.dataStream.BaseStream.Position;
-            this.delessFiles.Add(currFile);
-            this.CreateNewFile();
+            currentFile.EndingPosition = gameArchiveBinReader.BaseStream.Position;
+            this.delessFiles.Add(currentFile);
+            this.CreateNewFile(fileBuffer.ToArray(), $"{this.directory}/Zero/zeroFile{this.fileID}.LESS");
         }
 
-        public void SkipHeaderNewFile()
+        public void SkipHeaderNewFile(BinaryReader dataStream, int headerSize, List<byte> fileBuffer)
         {
-            for (var i = 0; i < 8; i++)
+            for (var i = 0; i < headerSize; i++)
             {
-                this.fileBuffer.Add(this.dataStream.ReadByte());
+                fileBuffer.Add(dataStream.ReadByte());
             }
         }
 
-        public void CreateNewFile()
+        public void CreateNewFile(byte[] fileBuffer, string newFileName)
         {
             Console.WriteLine($"Creating LESS archive: {this.fileID}");
-            using var writer = new BinaryWriter(File.Open($"{this.directory}/Zero/zeroFile{this.fileID}.LESS", FileMode.Create));
-            writer.Write(this.fileBuffer.ToArray());
+            using var writer = new BinaryWriter(File.Open(newFileName, FileMode.Create));
+            writer.Write(fileBuffer);
             this.fileID++;
         }
 
@@ -126,7 +142,9 @@ namespace Zero2Unpacker
             var fileBytes = File.ReadAllBytes(filename);
             var searchPosition = 0;
             var fileBuf = new List<byte>();
+            var headerFileBuf = new List<byte>();
             var fileFound = false;
+            var totalFilesFound = 0;
 
             foreach (var currByte in fileBytes)
             {
@@ -134,7 +152,12 @@ namespace Zero2Unpacker
                 {
                     fileBuf.Add(currByte);
                 }
-                else if (currByte != this.tim2Header[searchPosition])
+                else
+                {
+                    headerFileBuf.Add(currByte);
+                }
+
+                if (currByte != this.tim2Header[searchPosition])
                 {
                     searchPosition = 0;
                 }
@@ -143,46 +166,66 @@ namespace Zero2Unpacker
                     searchPosition++;
                     if (searchPosition == this.tim2Header.Length)
                     {
+                        if (fileFound)
+                        {
+                            fileBuf.RemoveRange(fileBuf.Count - 4, 4);
+
+                            using var writer = new BinaryWriter(File.Open($"{extensionFilename}A{totalFilesFound}.tim2", FileMode.Create));
+                            writer.Write(fileBuf.ToArray());
+                            fileBuf.Clear();
+                            totalFilesFound++;
+                        }
+
                         fileBuf.AddRange(this.tim2Header);
                         fileFound = true;
+                        searchPosition = 0;
                     }
                 }
             }
 
-            if (fileFound)
+            if (!fileFound)
             {
-                using var writer = new BinaryWriter(File.Open(extensionFilename, FileMode.Create));
-                writer.Write(fileBuf.ToArray());
-                //File.Delete(filename);
-                //File.Delete(filename.Replace(".LED", ""));
+                return;
             }
+
+            if (headerFileBuf.Count > this.tim2Header.Length)
+            {
+                headerFileBuf.RemoveRange(headerFileBuf.Count - 4, 4);
+                using var writerHeader = new BinaryWriter(File.Open($"{extensionFilename}HEADER", FileMode.Create));
+                writerHeader.Write(headerFileBuf.ToArray());
+            }
+
+            using var writerFile = new BinaryWriter(File.Open($"{extensionFilename}A{totalFilesFound}.tim2", FileMode.Create));
+
+            writerFile.Write(fileBuf.ToArray());
         }
 
         public void RunDeLESS()
         {
             foreach (var delessFile in this.delessFiles)
             {
-                Console.WriteLine($"Unarchiving file: {delessFile.fileName}");
+                Console.WriteLine($"Unarchiving file: {delessFile.FileName}");
                 System.Diagnostics.Process process = new System.Diagnostics.Process();
 
                 process.StartInfo.FileName = $"{this.directory}/DeLESS.exe";
                 process.StartInfo.WorkingDirectory = this.directory;
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.CreateNoWindow = false;
-                process.StartInfo.Arguments = delessFile.fileName;
+                process.StartInfo.Arguments = delessFile.FileName;
                 
                 process.Start();
                 process.WaitForExit();
 
                 try
                 {
-                    this.TrimTIM2EmptyHeader($"{delessFile.fileName}.LED",
-                        $"{this.directory}/Zero/zeroFile{delessFile.fileID}.tim2");
-                    Console.WriteLine($"File: {delessFile.fileName}, decompressed!");
+                    this.TrimTIM2EmptyHeader($"{delessFile.FileName}.LED",
+                        $"{this.directory}/Zero/Uncompressed/zeroFile{delessFile.FileId}");
+
+                    Console.WriteLine($"File: {delessFile.FileName}, decompressed!");
                 }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine($"Failed to create file for {delessFile.fileName}!");
+                    Console.Error.WriteLine($"Failed to create file for {delessFile.FileName}!");
                 }
             }
         }

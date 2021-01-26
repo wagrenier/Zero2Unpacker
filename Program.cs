@@ -16,7 +16,9 @@ namespace Zero2Unpacker
 
             var dataReader = new Zero2ArchiveHandler("IMG_BD_US.BIN", "D:/DecompressFiles");
 
-            dataReader.SplitDeLESSArchives();
+            //dataReader.SplitArchives();
+
+            dataReader.BuildAlreadyExistingDeLESSArchive(1822);
 
             Console.WriteLine($"Total files found : {dataReader.delessFiles.Count}");
 
