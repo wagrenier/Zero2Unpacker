@@ -22,7 +22,9 @@ namespace Zero2Unpacker
 
             Console.WriteLine($"Total files found : {dataReader.delessFiles.Count}");
 
-            dataReader.RunDeLESS();
+            //dataReader.DeLESSFiles();
+
+            dataReader.ExtractArchives();
         }
     }
 }
