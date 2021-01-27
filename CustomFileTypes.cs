@@ -43,7 +43,7 @@ namespace Zero2Unpacker
         public PssFile()
         {
             this.StartingBytes = new byte[] { 0x00, 0x00, 0x01, 0xBA, 0x44, 0x00 };
-            this.EndingBytes = new byte[] { 0xFF, 0xFF, 0x00, 0x00, 0x01, 0xB9 };
+            this.EndingBytes = new byte[] { 0x00, 0x00, 0x01, 0xB9 };
             this.HeaderSize = this.StartingBytes.Length;
             this.EndingSize = this.EndingBytes.Length;
             this.FileExtension = "PSS";

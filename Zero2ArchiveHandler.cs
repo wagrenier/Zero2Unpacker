@@ -341,7 +341,7 @@ namespace Zero2Unpacker
                     var zeroFilePss = new ZeroFile()
                     {
                         FileName = $"zeroFile{uncompressedFile.FileId}",
-                        Folder = $"{this.directory}/Zero/Uncompressed/pss/noend/",
+                        Folder = $"{this.directory}/Zero/Uncompressed/pss/",
                         FileHeader = new PssFile()
                     };
 

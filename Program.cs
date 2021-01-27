@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace Zero2Unpacker
 {
@@ -31,6 +32,17 @@ namespace Zero2Unpacker
             zero2ArchiveHandler.MultiThreadExtract(6);
 
             //zero2ArchiveHandler.ExtractArchives(zero2ArchiveHandler.DelessFiles);
+
+            var zeroFilePss = new ZeroFile()
+            {
+                FileName = $"zeroFile872",
+                Folder = $"D:/DecompressFiles/Zero/Uncompressed/pss/",
+                FileHeader = new PssFile()
+            };
+
+            //var fileBytes = File.ReadAllBytes($"D:/DecompressFiles/Zero/zeroFile872.LESS");
+
+            //zero2ArchiveHandler.ExtractFiles(zeroFilePss, fileBytes);
 
             watch.Stop();
             Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");
