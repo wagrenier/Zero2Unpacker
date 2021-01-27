@@ -7,38 +7,10 @@ using System.Threading.Tasks;
 
 namespace Zero2Unpacker
 {
-    public class DeLESSFile
-    {
-        public long StartingPosition = 0;
-        public long EndingPosition = 0;
-        public long FileSize = 0;
-        public string FileName;
-        public int FileId = 0;
-    }
-
-    public class FileHeader
-    {
-        public int HeaderSize;
-        public byte[] StartingBytes;
-        public byte[] EndingBytes;
-        public string FileType;
-        public string FileExtension;
-    }
-
-    public class PssFile : FileHeader
-    {
-
-    }
-
-    public class Pk4File : FileHeader
-    {
-
-    }
-
     public class Zero2ArchiveHandler
     {
         public int delessHeaderSize = 0x8;
-        public byte[] delessHeader = new byte[] {0x4c, 0x45, 0x53, 0x53};
+        public byte[] delessHeader = new byte[] { 0x4c, 0x45, 0x53, 0x53 };
         public byte[] tim2Header = new byte[] { 0x54, 0x49, 0x4D, 0x32 };
         public List<DeLESSFile> DelessFiles = new List<DeLESSFile>();
         private string fileName;
@@ -46,7 +18,6 @@ namespace Zero2Unpacker
         private long img_size;
         private FileInfo fileInfo;
         public int FileId = 0;
-        private readonly int NumCores = 6;
 
         public Zero2ArchiveHandler(string fileName, string directory)
         {
@@ -56,15 +27,15 @@ namespace Zero2Unpacker
             this.img_size = this.fileInfo.Length;
         }
 
-        public void MultiThreadExtract()
+        public void MultiThreadExtract(int numberCores)
         {
             // Split the list of files to handle into the number of available cores
             // construct two threads for our demonstration;  
-            var listCoreSize = this.DelessFiles.Count / this.NumCores;
+            var listCoreSize = this.DelessFiles.Count / numberCores;
 
-            var threadList = new Task[this.NumCores];
+            var threadList = new Task[numberCores];
 
-            for (var i = 0; i < this.NumCores; i++)
+            for (var i = 0; i < numberCores; i++)
             {
                 threadList[i] = Task.Factory.StartNew(ExtractArchives, this.DelessFiles.GetRange(i * listCoreSize, listCoreSize));
             }
@@ -76,7 +47,7 @@ namespace Zero2Unpacker
         {
             this.SplitArchives();
             this.DeLESSFiles();
-            this.MultiThreadExtract();
+            this.MultiThreadExtract(6);
         }
 
         public void BuildAlreadyExistingDeLESSArchive(int numberDeLESSArchives)
@@ -186,7 +157,7 @@ namespace Zero2Unpacker
             this.FileId++;
         }
 
-        public void SplitTim2Files(string filename, string extensionFilename)
+        public void ExtractTim2Files(string filename, string extensionFilename)
         {
             var fileBytes = File.ReadAllBytes(filename);
             var searchPosition = 0;
@@ -219,7 +190,7 @@ namespace Zero2Unpacker
                         {
                             fileBuf.RemoveRange(fileBuf.Count - 4, 4);
 
-                            using var writer = new BinaryWriter(File.Open($"{extensionFilename}A{totalFilesFound}.tm2", FileMode.Create));
+                            using var writer = new BinaryWriter(File.Open($"{extensionFilename}_{totalFilesFound}.tm2", FileMode.Create));
                             writer.Write(fileBuf.ToArray());
                             fileBuf.Clear();
                             totalFilesFound++;
@@ -239,52 +210,94 @@ namespace Zero2Unpacker
 
             if (headerFileBuf.Count > this.tim2Header.Length)
             {
-                headerFileBuf.RemoveRange(headerFileBuf.Count - 4, 4);
-                using var writerHeader = new BinaryWriter(File.Open($"{extensionFilename}HEADER", FileMode.Create));
-                writerHeader.Write(headerFileBuf.ToArray());
+                //headerFileBuf.RemoveRange(headerFileBuf.Count - 4, 4);
+                //using var writerHeader = new BinaryWriter(File.Open($"{extensionFilename}HEADER", FileMode.Create));
+                //writerHeader.Write(headerFileBuf.ToArray());
             }
 
-            using var writerFile = new BinaryWriter(File.Open($"{extensionFilename}A{totalFilesFound}.tm2", FileMode.Create));
+            using var writerFile = new BinaryWriter(File.Open($"{extensionFilename}_{totalFilesFound}.tm2", FileMode.Create));
 
             writerFile.Write(fileBuf.ToArray());
         }
 
-        public void ExtractFiles(byte[] fileHeader, byte[] fileEnd)
+        public void WriteBufferRangeToFile(ZeroFile zeroFile, byte[] fileBuffer)
         {
-            // PSS Files
-            // Starting bytes   :    var bytes = new bytes[]{00 00 01 BA 44 00 04 00 04};
-            // Ending bytes     :    var bytes = new bytes[]{FF FF FF FF FF 00 00 01 B9);
+            Directory.CreateDirectory(zeroFile.Folder);
+            using var writer = new BinaryWriter(File.Open($"{zeroFile.Folder}{zeroFile.FileName}_{zeroFile.FileId}.{zeroFile.FileHeader.FileExtension}", FileMode.Create));
 
-            // PK4 Files
-            // Starting bytes   :
-            // Ending bytes     :
+            for (var i = zeroFile.StartingPosition; i < zeroFile.EndingPosition; i++)
+            {
+                writer.Write(fileBuffer[i]);
+            }
+        }
 
+        public void ExtractFiles(ZeroFile zeroFile, byte[] fileBuffer)
+        {
             /*
              * 1) Find the file HEADER
              * 2) Flip to record data
              * 3) Look for file END
+             * 4) GOTO 1) Until end of file
              * 4) Save file
-             *
              */
-        }
 
-        public void ExtractArchives(object? filesToExtractObj)
-        {
-            var filesToExtract = filesToExtractObj as List<DeLESSFile>;
-            foreach (var delessFile in filesToExtract)
+            var searchPosition = 0;
+            var totalFilesFound = 0;
+            var fileFound = false;
+            var currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
+            var currentHeaderLookUpSize = zeroFile.FileHeader.HeaderSize;
+
+            for (var i = 0; i < fileBuffer.Length; i++)
             {
-                try
+                if (fileBuffer[i] != currentHeaderLookUp[searchPosition])
                 {
-                    this.SplitTim2Files($"{delessFile.FileName}.LED",
-                        $"{this.directory}/Zero/Uncompressed/zeroFile{delessFile.FileId}");
-
-                    Console.WriteLine($"File: {delessFile.FileName}, decompressed!");
+                    searchPosition = 0;
                 }
-                catch (Exception e)
+                else if (fileBuffer[i] == currentHeaderLookUp[searchPosition])
                 {
-                    Console.Error.WriteLine($"Failed to create file for {delessFile.FileName}!");
+                    searchPosition++;
+                    if (searchPosition != currentHeaderLookUp.Length)
+                    {
+                        continue;
+                    }
+
+                    if (fileFound)
+                    {
+                        zeroFile.EndingPosition = i + 1;
+                        zeroFile.FileId = totalFilesFound;
+                        this.WriteBufferRangeToFile(zeroFile, fileBuffer);
+
+                        currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
+                        currentHeaderLookUpSize = zeroFile.FileHeader.HeaderSize;
+                        fileFound = false;
+                        totalFilesFound++;
+                    }
+                    else if(zeroFile.FileHeader.EndingBytes != null)
+                    {
+                        zeroFile.StartingPosition = i - currentHeaderLookUpSize + 1;
+                        currentHeaderLookUp = zeroFile.FileHeader.EndingBytes;
+                        currentHeaderLookUpSize = zeroFile.FileHeader.EndingSize;
+                        fileFound = true;
+                    }
+                    else
+                    {
+                        zeroFile.StartingPosition = i - currentHeaderLookUpSize + 1;
+                        fileFound = true;
+                        totalFilesFound++;
+                    }
+
+                    searchPosition = 0;
                 }
             }
+
+            if (!fileFound)
+            {
+                return;
+            }
+
+            zeroFile.EndingPosition = fileBuffer.Length;
+            zeroFile.FileId = totalFilesFound;
+            this.WriteBufferRangeToFile(zeroFile, fileBuffer);
         }
 
         public void DeLESSFiles()
@@ -302,6 +315,47 @@ namespace Zero2Unpacker
                 
                 process.Start();
                 process.WaitForExit();
+            }
+        }
+
+        public void ExtractArchives(object? filesToExtractObj)
+        {
+            if (!(filesToExtractObj is List<DeLESSFile> filesToExtract))
+            {
+                return;
+            }
+
+            foreach (var uncompressedFile in filesToExtract)
+            {
+                try
+                {
+                    var fileBytes = File.ReadAllBytes($"{uncompressedFile.FileName}");
+
+                    var zeroFile = new ZeroFile()
+                    {
+                        FileName = $"zeroFile{uncompressedFile.FileId}",
+                        Folder = $"{this.directory}/Zero/Uncompressed/tm2/",
+                        FileHeader = new Tim2File()
+                    };
+
+                    var zeroFilePss = new ZeroFile()
+                    {
+                        FileName = $"zeroFile{uncompressedFile.FileId}",
+                        Folder = $"{this.directory}/Zero/Uncompressed/pss/noend/",
+                        FileHeader = new PssFile()
+                    };
+
+                    //this.ExtractFiles(zeroFile, fileBytes);
+                    this.ExtractFiles(zeroFilePss, fileBytes);
+
+                    //this.ExtractTim2Files($"{uncompressedFile.FileName}.LED", $"{this.directory}/Zero/Uncompressed/timtest/zeroFile{uncompressedFile.FileId}");
+
+                    Console.WriteLine($"File: {uncompressedFile.FileName}, extracted!");
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine($"Failed to create file for {uncompressedFile.FileName}! REASON: {e.Message}");
+                }
             }
         }
     }

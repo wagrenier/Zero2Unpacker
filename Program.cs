@@ -28,7 +28,9 @@ namespace Zero2Unpacker
 
             //dataReader.DeLESSFiles();
 
-            zero2ArchiveHandler.MultiThreadExtract();
+            zero2ArchiveHandler.MultiThreadExtract(6);
+
+            //zero2ArchiveHandler.ExtractArchives(zero2ArchiveHandler.DelessFiles);
 
             watch.Stop();
             Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");
