@@ -20,11 +20,16 @@ namespace Zero2Unpacker
 
             dataReader.BuildAlreadyExistingDeLESSArchive(1822);
 
-            Console.WriteLine($"Total files found : {dataReader.delessFiles.Count}");
+            Console.WriteLine($"Total files found : {dataReader.DelessFiles.Count}");
+
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
+            dataReader.MultiThreadExtract();
 
             //dataReader.DeLESSFiles();
 
-            dataReader.ExtractArchives();
+            watch.Stop();
+            Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");
         }
     }
 }

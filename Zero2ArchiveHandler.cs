@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Zero2Unpacker
 {
@@ -14,17 +16,37 @@ namespace Zero2Unpacker
         public int FileId = 0;
     }
 
+    public class FileHeader
+    {
+        public int HeaderSize;
+        public byte[] StartingBytes;
+        public byte[] EndingBytes;
+        public string FileType;
+        public string FileExtension;
+    }
+
+    public class PssFile : FileHeader
+    {
+
+    }
+
+    public class Pk4File : FileHeader
+    {
+
+    }
+
     public class Zero2ArchiveHandler
     {
         public int delessHeaderSize = 0x8;
         public byte[] delessHeader = new byte[] {0x4c, 0x45, 0x53, 0x53};
         public byte[] tim2Header = new byte[] { 0x54, 0x49, 0x4D, 0x32 };
+        public List<DeLESSFile> DelessFiles = new List<DeLESSFile>();
         private string fileName;
         private string directory;
         private long img_size;
         private FileInfo fileInfo;
-        public List<DeLESSFile> DelessFiles = new List<DeLESSFile>();
         public int FileId = 0;
+        private readonly int NumCores = 6;
 
         public Zero2ArchiveHandler(string fileName, string directory)
         {
@@ -34,11 +56,27 @@ namespace Zero2Unpacker
             this.img_size = this.fileInfo.Length;
         }
 
+        public void MultiThreadExtract()
+        {
+            // Split the list of files to handle into the number of available cores
+            // construct two threads for our demonstration;  
+            var listCoreSize = this.DelessFiles.Count / this.NumCores;
+
+            var threadList = new Task[this.NumCores];
+
+            for (var i = 0; i < this.NumCores; i++)
+            {
+                threadList[i] = Task.Factory.StartNew(ExtractArchives, this.DelessFiles.GetRange(i * listCoreSize, listCoreSize));
+            }
+
+            Task.WaitAll(threadList);
+        }
+
         public void ExtractAll()
         {
             this.SplitArchives();
             this.DeLESSFiles();
-            this.ExtractArchives();
+            this.MultiThreadExtract();
         }
 
         public void BuildAlreadyExistingDeLESSArchive(int numberDeLESSArchives)
@@ -56,6 +94,10 @@ namespace Zero2Unpacker
             }
         }
 
+        /// <summary>
+        /// Extracts all DeLESS archives from the bin file
+        /// !! MUST NOT BE RAN IN MULTI THREADED CONTEXT !!
+        /// </summary>
         public void SplitArchives()
         { 
             using var gameArchiveBinReader = new BinaryReader(new FileStream($"{this.directory}/{this.fileName}", FileMode.Open, FileAccess.Read));
@@ -210,17 +252,26 @@ namespace Zero2Unpacker
         public void ExtractFiles(byte[] fileHeader, byte[] fileEnd)
         {
             // PSS Files
-            // Starting bytes:  var bytes = new bytes[]{00 00 01 BA 44 00 04 00 04};
-            // Ending bytes:    var bytes = new bytes[]{FF FF FF FF FF 00 00 01 B9);
+            // Starting bytes   :    var bytes = new bytes[]{00 00 01 BA 44 00 04 00 04};
+            // Ending bytes     :    var bytes = new bytes[]{FF FF FF FF FF 00 00 01 B9);
 
             // PK4 Files
-            // Starting bytes:
-            // Ending bytes
+            // Starting bytes   :
+            // Ending bytes     :
+
+            /*
+             * 1) Find the file HEADER
+             * 2) Flip to record data
+             * 3) Look for file END
+             * 4) Save file
+             *
+             */
         }
 
-        public void ExtractArchives()
+        public void ExtractArchives(object? filesToExtractObj)
         {
-            foreach (var delessFile in this.DelessFiles)
+            var filesToExtract = filesToExtractObj as List<DeLESSFile>;
+            foreach (var delessFile in filesToExtract)
             {
                 try
                 {
