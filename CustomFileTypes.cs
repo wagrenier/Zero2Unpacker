@@ -58,6 +58,14 @@ namespace Zero2Unpacker
         // Ending bytes     :
     }
 
+    public class StrFile : FileHeader
+    {
+        public StrFile()
+        {
+
+        }
+    }
+
     public class Tim2File : FileHeader
     {
         public Tim2File()

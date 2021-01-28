@@ -237,8 +237,8 @@ namespace Zero2Unpacker
              * 1) Find the file HEADER
              * 2) Flip to record data
              * 3) Look for file END
-             * 4) GOTO 1) Until end of file
              * 4) Save file
+             * 5) GOTO 1) Until end of file
              */
 
             var searchPosition = 0;
@@ -300,19 +300,41 @@ namespace Zero2Unpacker
             this.WriteBufferRangeToFile(zeroFile, fileBuffer);
         }
 
+        public void ExtractAudioFiles(ZeroFile zeroFile, byte[] fileBuffer)
+        {
+            /*
+             * At first sigh, a few file types require this type of logic, everything with DXH after
+             *
+             *  1) Trouver cette ligne
+             *  0x00, 0x07, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77
+             *
+             *  2) Le file va se rendre jusqu'au header DXH
+             *  00 44 58 48 00 10 00 00 02 00 00 00 00 00 00 00
+             *
+             *  3) Mettre le curseur actuel sur la ligne 1)
+             *
+             *  4) Le audio file sera donc le byte avant 2) jusqu'a la premiere ligne (inclue) de 00
+             *  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+             */
+        }
+
         public void DeLESSFiles()
         {
-            foreach (var delessFile in this.DelessFiles)
+            foreach (var file in this.DelessFiles)
             {
-                Console.WriteLine($"Unarchiving file: {delessFile.FileName}");
-                System.Diagnostics.Process process = new System.Diagnostics.Process();
+                Console.WriteLine($"Unarchiving file: {file.FileName}");
+                var process = new Process
+                {
+                    StartInfo =
+                    {
+                        FileName = $"{this.directory}/DeLESS.exe",
+                        WorkingDirectory = this.directory,
+                        UseShellExecute = false,
+                        CreateNoWindow = false,
+                        Arguments = file.FileName
+                    }
+                };
 
-                process.StartInfo.FileName = $"{this.directory}/DeLESS.exe";
-                process.StartInfo.WorkingDirectory = this.directory;
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.CreateNoWindow = false;
-                process.StartInfo.Arguments = delessFile.FileName;
-                
                 process.Start();
                 process.WaitForExit();
             }
