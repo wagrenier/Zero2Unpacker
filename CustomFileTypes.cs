@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace Zero2Unpacker
 {
     public abstract class FileHeader
@@ -33,11 +30,6 @@ namespace Zero2Unpacker
         public int FileId = 0;
     }
 
-    /// <summary>
-    /// PSS Files
-    /// Starting bytes   :    var bytes = new byte[]{00 00 01 BA 44 00 04 00 04};
-    /// Ending bytes     :    var bytes = new byte[]{FF FF FF FF FF 00 00 01 B9};
-    /// </summary>
     public class PssFile : FileHeader
     {
         public PssFile()

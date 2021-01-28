@@ -2,14 +2,13 @@
 {
     public static class ByteExtensionMethods
     {
-        public static byte[] emptyHeader = new byte[]
+        public static byte[] EmptyHeader = new byte[]
         {
-            00, 00, 00, 00,
-            00, 00, 00, 00,
-            00, 00, 00, 00,
-            00, 00, 00, 00
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00
         };
-
 
         /// <summary>
         /// Find a byte pattern in a byte buffer in reverse.

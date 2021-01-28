@@ -341,7 +341,7 @@ namespace Zero2Unpacker
                     {
                         zeroFile.EndingPosition = i - currentHeaderLookUpSize + 1;
 
-                        zeroFile.StartingPosition = fileBuffer.FindBytesIndexBackWardInByteBuffer(ByteExtensionMethods.emptyHeader, zeroFile.StartingPosition);
+                        zeroFile.StartingPosition = fileBuffer.FindBytesIndexBackWardInByteBuffer(ByteExtensionMethods.EmptyHeader, zeroFile.StartingPosition);
 
 
                         zeroFile.FileId = totalFilesFound;
@@ -408,6 +408,7 @@ namespace Zero2Unpacker
                 try
                 {
                     var fileBytes = File.ReadAllBytes($"{uncompressedFile.FileName}");
+                    //var fileBytesLED = File.ReadAllBytes($"{uncompressedFile.FileName}.LED");
 
                     var zeroFile = new ZeroFile()
                     {
@@ -430,7 +431,7 @@ namespace Zero2Unpacker
                         FileHeader = new StrFile()
                     };
 
-                    //this.ExtractFiles(zeroFile, fileBytes);
+                    //this.ExtractFiles(zeroFile, fileBytesLED);
                     this.ExtractFiles(zeroFilePss, fileBytes);
                     //this.ExtractDxhFiles(zeroFileStr, fileBytes);
 
