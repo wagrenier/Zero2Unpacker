@@ -17,8 +17,8 @@ namespace Zero2Unpacker
     {
         public FileHeader FileHeader;
         public int FileId = 0;
-        public long StartingPosition = 0;
-        public long EndingPosition = 0;
+        public int StartingPosition = 0;
+        public int EndingPosition = 0;
         public long FileSize = 0;
         public string FileName = "zeroFile";
         public string Folder;
@@ -46,7 +46,7 @@ namespace Zero2Unpacker
             this.EndingBytes = new byte[] { 0x00, 0x00, 0x01, 0xB9 };
             this.HeaderSize = this.StartingBytes.Length;
             this.EndingSize = this.EndingBytes.Length;
-            this.FileExtension = "PSS";
+            this.FileExtension = "pss";
         }
 
     }
@@ -62,7 +62,23 @@ namespace Zero2Unpacker
     {
         public StrFile()
         {
+            this.StartingBytes = new byte[] { 
+                0x00, 0x07, 0x77, 0x77, 
+                0x77, 0x77, 0x77, 0x77, 
+                0x77, 0x77, 0x77, 0x77, 
+                0x77, 0x77, 0x77, 0x77
+            };
 
+            this.EndingBytes = new byte[]
+            {
+                0x00, 0x44, 0x58, 0x48,
+                0x00, 0x10, 0x00, 0x00,
+                0x02, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00,
+            };
+            this.HeaderSize = this.StartingBytes.Length;
+            this.EndingSize = this.EndingBytes.Length;
+            this.FileExtension = "str";
         }
     }
 

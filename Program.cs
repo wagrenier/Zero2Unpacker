@@ -29,7 +29,7 @@ namespace Zero2Unpacker
 
             //dataReader.DeLESSFiles();
 
-            zero2ArchiveHandler.MultiThreadExtract(6);
+            zero2ArchiveHandler.MultiThreadExtract(12);
 
             //zero2ArchiveHandler.ExtractArchives(zero2ArchiveHandler.DelessFiles);
 

@@ -300,7 +300,7 @@ namespace Zero2Unpacker
             this.WriteBufferRangeToFile(zeroFile, fileBuffer);
         }
 
-        public void ExtractAudioFiles(ZeroFile zeroFile, byte[] fileBuffer)
+        public void ExtractDxhFiles(ZeroFile zeroFile, byte[] fileBuffer)
         {
             /*
              * At first sigh, a few file types require this type of logic, everything with DXH after
@@ -313,9 +313,65 @@ namespace Zero2Unpacker
              *
              *  3) Mettre le curseur actuel sur la ligne 1)
              *
-             *  4) Le audio file sera donc le byte avant 2) jusqu'a la premiere ligne (inclue) de 00
+             *  4) Le audio file sera donc la premiere ligne (inclue) de 00 avant 1) jusqu'au byte avant 2) 
              *  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
              */
+
+            var searchPosition = 0;
+            var totalFilesFound = 0;
+            var fileFound = false;
+            var currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
+            var currentHeaderLookUpSize = zeroFile.FileHeader.HeaderSize;
+
+            for (var i = 0; i < fileBuffer.Length; i++)
+            {
+                if (fileBuffer[i] != currentHeaderLookUp[searchPosition])
+                {
+                    searchPosition = 0;
+                }
+                else if (fileBuffer[i] == currentHeaderLookUp[searchPosition])
+                {
+                    searchPosition++;
+                    if (searchPosition != currentHeaderLookUp.Length)
+                    {
+                        continue;
+                    }
+
+                    if (fileFound)
+                    {
+                        zeroFile.EndingPosition = i - currentHeaderLookUpSize + 1;
+
+                        zeroFile.StartingPosition = fileBuffer.FindBytesIndexBackWardInByteBuffer(ByteExtensionMethods.emptyHeader, zeroFile.StartingPosition);
+
+
+                        zeroFile.FileId = totalFilesFound;
+                        this.WriteBufferRangeToFile(zeroFile, fileBuffer);
+
+                        currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
+                        currentHeaderLookUpSize = zeroFile.FileHeader.HeaderSize;
+                        fileFound = false;
+                        totalFilesFound++;
+                    }
+                    else if (zeroFile.FileHeader.EndingBytes != null)
+                    {
+                        zeroFile.StartingPosition = i;
+                        currentHeaderLookUp = zeroFile.FileHeader.EndingBytes;
+                        currentHeaderLookUpSize = zeroFile.FileHeader.EndingSize;
+                        fileFound = true;
+                    }
+
+                    searchPosition = 0;
+                }
+            }
+
+            if (!fileFound)
+            {
+                return;
+            }
+
+            zeroFile.EndingPosition = fileBuffer.Length;
+            zeroFile.FileId = totalFilesFound;
+            //this.WriteBufferRangeToFile(zeroFile, fileBuffer);
         }
 
         public void DeLESSFiles()
@@ -367,8 +423,16 @@ namespace Zero2Unpacker
                         FileHeader = new PssFile()
                     };
 
+                    var zeroFileStr = new ZeroFile()
+                    {
+                        FileName = $"zeroFile{uncompressedFile.FileId}",
+                        Folder = $"{this.directory}/Zero/Uncompressed/audio/",
+                        FileHeader = new StrFile()
+                    };
+
                     //this.ExtractFiles(zeroFile, fileBytes);
                     this.ExtractFiles(zeroFilePss, fileBytes);
+                    //this.ExtractDxhFiles(zeroFileStr, fileBytes);
 
                     //this.ExtractTim2Files($"{uncompressedFile.FileName}.LED", $"{this.directory}/Zero/Uncompressed/timtest/zeroFile{uncompressedFile.FileId}");
 
