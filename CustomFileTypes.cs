@@ -10,6 +10,12 @@ namespace Zero2Unpacker
         public string FileExtension;
     }
 
+    public class ArchiveFile
+    {
+        public string FileName;
+        public int FileId = 0;
+    }
+
     public class ZeroFile
     {
         public FileHeader FileHeader;
@@ -21,26 +27,38 @@ namespace Zero2Unpacker
         public string Folder;
     }
 
-    public class DeLESSFile
+    public class DeLESSFile : FileHeader
     {
-        public long StartingPosition = 0;
-        public long EndingPosition = 0;
-        public long FileSize = 0;
-        public string FileName;
-        public int FileId = 0;
+        public DeLESSFile()
+        {
+            this.StartingBytes = new byte[]
+            {
+                0x4c, 0x45, 0x53, 0x53
+            };
+
+            this.HeaderSize = 0x8;
+            this.FileExtension = "LESS";
+        }
     }
 
     public class PssFile : FileHeader
     {
         public PssFile()
         {
-            this.StartingBytes = new byte[] { 0x00, 0x00, 0x01, 0xBA, 0x44, 0x00 };
-            this.EndingBytes = new byte[] { 0x00, 0x00, 0x01, 0xB9 };
+            this.StartingBytes = new byte[]
+            {
+                0x00, 0x00, 0x01, 0xBA, 
+                0x44
+            };
+
+            this.EndingBytes = new byte[]
+            {
+                0x00, 0x00, 0x01, 0xB9
+            };
             this.HeaderSize = this.StartingBytes.Length;
             this.EndingSize = this.EndingBytes.Length;
             this.FileExtension = "pss";
         }
-
     }
 
     public class Pk4File : FileHeader
@@ -78,7 +96,11 @@ namespace Zero2Unpacker
     {
         public Tim2File()
         {
-            this.StartingBytes = new byte[] { 0x54, 0x49, 0x4D, 0x32 };
+            this.StartingBytes = new byte[]
+            {
+                0x54, 0x49, 0x4D, 0x32
+            };
+
             this.HeaderSize = this.StartingBytes.Length;
             this.FileExtension = "tm2";
         }

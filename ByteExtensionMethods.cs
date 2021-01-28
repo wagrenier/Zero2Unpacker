@@ -17,7 +17,7 @@
         /// <param name="bytesToFind"></param>
         /// <param name="startingIndex"></param>
         /// <returns>Index of the beginning of the bytesToFind array in the fileBuffer.</returns>
-        public static int FindBytesIndexBackWardInByteBuffer(this byte[] fileBuffer, byte[] bytesToFind, int startingIndex)
+        public static int FindBytesIndexBackWardInByteBuffer(this byte[] fileBuffer, byte[] bytesToFind, int startingIndex = 0)
         {
             var searchPosition = 0;
             for (var i = startingIndex; i > 0; i--)
@@ -47,7 +47,7 @@
         /// <param name="bytesToFind"></param>
         /// <param name="startingIndex"></param>
         /// <returns>Index of the beginning of the bytesToFind array in the fileBuffer.</returns>
-        public static int FindBytesIndexInByteBuffer(this byte[] fileBuffer, byte[] bytesToFind, int startingIndex)
+        public static int FindBytesIndexInByteBuffer(this byte[] fileBuffer, byte[] bytesToFind, int startingIndex = 0)
         {
             var searchPosition = 0;
             for (var i = startingIndex; i < fileBuffer.Length; i++)
