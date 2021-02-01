@@ -10,6 +10,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="DeLESS.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>

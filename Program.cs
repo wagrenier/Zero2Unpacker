@@ -1,5 +1,5 @@
 ﻿using System;
-using System.IO;
+using CommandLine;
 
 namespace Zero2Unpacker
 {
@@ -19,6 +19,14 @@ namespace Zero2Unpacker
              *
              */
 
+            CommandLine.Parser.Default.ParseArguments<AddOptions, CommitOptions, CloneOptions>(args)
+            .MapResult(
+                (AddOptions opts) => AA(opts),
+                (CommitOptions opts) => BB(opts),
+                (CloneOptions opts) => CC(opts),
+                errs => 1);
+
+            
             var zero2ArchiveHandler = new Zero2ArchiveHandler("IMG_BD_US.BIN", "D:/DecompressFiles");
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -34,5 +42,21 @@ namespace Zero2Unpacker
             watch.Stop();
             Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");
         }
+
+        public static int AA(AddOptions options)
+        {
+            return 0;
+        }
+
+        public static int BB(CommitOptions options)
+        {
+            return 0;
+        }
+
+        public static int CC(CloneOptions options)
+        {
+            return 0;
+        }
+
     }
 }

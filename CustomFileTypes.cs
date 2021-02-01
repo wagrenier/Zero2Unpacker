@@ -1,6 +1,41 @@
-﻿
-namespace Zero2Unpacker
+﻿namespace Zero2Unpacker
 {
+    public interface IFileHeader
+    {
+        public int HeaderSize { get; }
+        public int EndingSize { get; }
+        public byte[] StartingBytes { get; }
+        public byte[] EndingBytes { get; }
+        public string FileExtension { get; }
+    }
+
+    public class MyFileHeader : IFileHeader
+    {
+        private static int _headerSize = 0x1;
+        private static int _endingSize = 0x1;
+        private static byte[] _startingBytes = new byte[]
+        {
+            0x4c, 0x45, 0x53, 0x53
+        };
+
+        private static byte[] mybytes = new byte[]
+        {
+            0x4c, 0x45, 0x53, 0x53
+        };
+
+        private static string _fileExtension = "abc";
+
+        public byte[] EndingBytes => mybytes;
+
+        public int HeaderSize => _headerSize;
+
+        public int EndingSize => _endingSize;
+
+        public byte[] StartingBytes => _startingBytes;
+
+        public string FileExtension => _fileExtension;
+    }
+
     public abstract class FileHeader
     {
         public int HeaderSize;
@@ -47,7 +82,7 @@ namespace Zero2Unpacker
         {
             this.StartingBytes = new byte[]
             {
-                0x00, 0x00, 0x01, 0xBA, 
+                0x00, 0x00, 0x01, 0xBA,
                 0x44
             };
 
