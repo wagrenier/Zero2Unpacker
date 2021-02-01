@@ -9,135 +9,167 @@
         public string FileExtension { get; }
     }
 
-    public class MyFileHeader : IFileHeader
+    public class StrFile : IFileHeader
     {
-        private static int _headerSize = 0x1;
-        private static int _endingSize = 0x1;
-        private static byte[] _startingBytes = new byte[]
-        {
-            0x4c, 0x45, 0x53, 0x53
+        private static int _headerSize = 0xF;
+        private static int _endingSize = 0xF;
+
+        private static readonly byte[] _startingBytes = new byte[] {
+            0x00, 0x07, 0x77, 0x77,
+            0x77, 0x77, 0x77, 0x77,
+            0x77, 0x77, 0x77, 0x77,
+            0x77, 0x77, 0x77, 0x77
         };
 
-        private static byte[] mybytes = new byte[]
+        private static readonly byte[] _endingBytes = new byte[]
         {
-            0x4c, 0x45, 0x53, 0x53
+            0x00, 0x44, 0x58, 0x48,
+            0x00, 0x10, 0x00, 0x00,
+            0x02, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00
         };
 
-        private static string _fileExtension = "abc";
+        private static string _fileExtension = "str";
 
-        public byte[] EndingBytes => mybytes;
+        public byte[] StartingBytes => _startingBytes;
+
+        public byte[] EndingBytes => _endingBytes;
 
         public int HeaderSize => _headerSize;
 
         public int EndingSize => _endingSize;
 
+        public string FileExtension => _fileExtension;
+    }
+
+    public class Tim2File : IFileHeader
+    {
+        private static int _headerSize = 0x4;
+
+        private static readonly byte[] _startingBytes = new byte[]
+        {
+            0x54, 0x49, 0x4D, 0x32
+        };
+
+        private static string _fileExtension = "tm2";
+
         public byte[] StartingBytes => _startingBytes;
+
+        public byte[] EndingBytes => null;
+
+        public int HeaderSize => _headerSize;
+
+        public int EndingSize => -1;
 
         public string FileExtension => _fileExtension;
     }
 
-    public abstract class FileHeader
+    public class PssFile : IFileHeader
     {
-        public int HeaderSize;
-        public int EndingSize;
-        public byte[] StartingBytes;
-        public byte[] EndingBytes;
-        public string FileExtension;
+        private static int _headerSize = 0x5;
+        private static int _endingSize = 0x4;
+
+        private static readonly byte[] _startingBytes = new byte[]
+        {
+            0x00, 0x00, 0x01, 0xBA,
+            0x44
+        };
+
+        private static readonly byte[] _endingBytes = new byte[]
+        {
+            0x00, 0x00, 0x01, 0xB9
+        };
+
+        private static string _fileExtension = "pss";
+
+        public byte[] StartingBytes => _startingBytes;
+
+        public byte[] EndingBytes => _endingBytes;
+
+        public int HeaderSize => _headerSize;
+
+        public int EndingSize => _endingSize;
+
+        public string FileExtension => _fileExtension;
+    }
+
+    public class DeLESSFile : IFileHeader
+    {
+        // First 4 bytes indicate size when decompressed
+        // Second line, bytes from 0xC to 0xF indicate compressed file size
+
+        private static int _headerSize = 0x8;
+
+        private static readonly byte[] _startingBytes = new byte[]
+        {
+            0x4c, 0x45, 0x53, 0x53
+        };
+
+        private static string _fileExtension = "LESS";
+
+        public byte[] StartingBytes => _startingBytes;
+
+        public byte[] EndingBytes => null;
+
+        public int HeaderSize => _headerSize;
+
+        public int EndingSize => 0x0;
+
+        public string FileExtension => _fileExtension;
+    }
+
+    public class Pk4File : IFileHeader
+    {
+        // PK4 Files
+        // Starting bytes   :
+        // Ending bytes     :
+
+        private static int _headerSize = 0xF;
+        private static int _endingSize = 0xF;
+
+        private static readonly byte[] _startingBytes = new byte[] {
+            0x00, 0x07, 0x77, 0x77,
+            0x77, 0x77, 0x77, 0x77,
+            0x77, 0x77, 0x77, 0x77,
+            0x77, 0x77, 0x77, 0x77
+        };
+
+        private static readonly byte[] _endingBytes = new byte[]
+        {
+            0x00, 0x44, 0x58, 0x48,
+            0x00, 0x10, 0x00, 0x00,
+            0x02, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00
+        };
+
+        private static string _fileExtension = "str";
+
+        public byte[] StartingBytes => _startingBytes;
+
+        public byte[] EndingBytes => _endingBytes;
+
+        public int HeaderSize => _headerSize;
+
+        public int EndingSize => _endingSize;
+
+        public string FileExtension => _fileExtension;
     }
 
     public class ArchiveFile
     {
+        public string Folder;
         public string FileName;
         public int FileId = 0;
     }
 
     public class ZeroFile
     {
-        public FileHeader FileHeader;
+        public IFileHeader FileHeader;
         public int FileId = 0;
         public int StartingPosition = 0;
         public int EndingPosition = 0;
         public long FileSize = 0;
         public string FileName = "zeroFile";
         public string Folder;
-    }
-
-    public class DeLESSFile : FileHeader
-    {
-        public DeLESSFile()
-        {
-            this.StartingBytes = new byte[]
-            {
-                0x4c, 0x45, 0x53, 0x53
-            };
-
-            this.HeaderSize = 0x8;
-            this.FileExtension = "LESS";
-        }
-    }
-
-    public class PssFile : FileHeader
-    {
-        public PssFile()
-        {
-            this.StartingBytes = new byte[]
-            {
-                0x00, 0x00, 0x01, 0xBA,
-                0x44
-            };
-
-            this.EndingBytes = new byte[]
-            {
-                0x00, 0x00, 0x01, 0xB9
-            };
-            this.HeaderSize = this.StartingBytes.Length;
-            this.EndingSize = this.EndingBytes.Length;
-            this.FileExtension = "pss";
-        }
-    }
-
-    public class Pk4File : FileHeader
-    {
-        // PK4 Files
-        // Starting bytes   :
-        // Ending bytes     :
-    }
-
-    public class StrFile : FileHeader
-    {
-        public StrFile()
-        {
-            this.StartingBytes = new byte[] { 
-                0x00, 0x07, 0x77, 0x77, 
-                0x77, 0x77, 0x77, 0x77, 
-                0x77, 0x77, 0x77, 0x77, 
-                0x77, 0x77, 0x77, 0x77
-            };
-
-            this.EndingBytes = new byte[]
-            {
-                0x00, 0x44, 0x58, 0x48,
-                0x00, 0x10, 0x00, 0x00,
-                0x02, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-            };
-            this.HeaderSize = this.StartingBytes.Length;
-            this.EndingSize = this.EndingBytes.Length;
-            this.FileExtension = "str";
-        }
-    }
-
-    public class Tim2File : FileHeader
-    {
-        public Tim2File()
-        {
-            this.StartingBytes = new byte[]
-            {
-                0x54, 0x49, 0x4D, 0x32
-            };
-
-            this.HeaderSize = this.StartingBytes.Length;
-            this.FileExtension = "tm2";
-        }
     }
 }

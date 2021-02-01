@@ -19,4 +19,10 @@
     </Resource>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="MFAudio.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

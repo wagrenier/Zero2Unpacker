@@ -18,7 +18,7 @@ namespace Zero2Unpacker
             this._directory = directory;
         }
 
-        public void ExtractAll()
+        public void ExtractAll(int coreCount = 12)
         {
 
             this.SplitArchives(new ZeroFile()
@@ -31,14 +31,13 @@ namespace Zero2Unpacker
                 FileHeader = new DeLESSFile()
             });
 
-            this.DeLESSFiles();
-            this.MultiThreadExtract(12);
+            this.DeLESSFiles(this.ArchiveFiles);
+            this.MultiThreadExtract(coreCount);
         }
 
         public void MultiThreadExtract(int numberCores)
         {
             // Split the list of files to handle into the number of available cores
-            // construct two threads for our demonstration;  
             var listCoreSize = this.ArchiveFiles.Count / numberCores;
 
             var threadList = new Task[numberCores];
@@ -58,7 +57,8 @@ namespace Zero2Unpacker
                 var currentFile = new ArchiveFile()
                 {
                     FileId = i,
-                    FileName = $"{this._directory}/Zero/zeroFile{i}.LESS"
+                    Folder = $"{this._directory}/Zero/LESS/",
+                    FileName = $"zeroFile{i}.LESS"
                 };
 
                 this.ArchiveFiles.Add(currentFile);
@@ -76,11 +76,14 @@ namespace Zero2Unpacker
 
             var currentFile = new ArchiveFile
             {
-                FileName = $"{this._directory}/Zero/zeroFile{zeroFile.FileId}.LESS",
+                Folder = zeroFile.Folder,
+                FileName = $"{zeroFile.FileName}{zeroFile.FileId}.{zeroFile.FileHeader.FileExtension}",
                 FileId = zeroFile.FileId
             };
 
-            var writer = new BinaryWriter(File.Open($"{currentFile.FileName}", FileMode.Create));
+            Directory.CreateDirectory(zeroFile.Folder);
+
+            var writer = new BinaryWriter(File.Open($"{currentFile.Folder}{currentFile.FileName}", FileMode.Create));
 
             // Skips the header of the first file
             writer.Write(gameArchiveBinReader.ReadBytes(0x10));
@@ -104,11 +107,12 @@ namespace Zero2Unpacker
 
                     currentFile = new ArchiveFile
                     {
-                        FileName = $"{this._directory}/Zero/zeroFile{zeroFile.FileId}.LESS",
+                        Folder = zeroFile.Folder,
+                        FileName = $"{zeroFile.FileName}{zeroFile.FileId}.{zeroFile.FileHeader.FileExtension}",
                         FileId = zeroFile.FileId
                     };
 
-                    writer = new BinaryWriter(File.Open($"{currentFile.FileName}", FileMode.Create));
+                    writer = new BinaryWriter(File.Open($"{currentFile.Folder}{currentFile.FileName}", FileMode.Create));
                     this.ArchiveFiles.Add(currentFile);
                 }
 
@@ -116,17 +120,6 @@ namespace Zero2Unpacker
             }
 
             writer.Close();
-        }
-
-        public void WriteBufferRangeToFile(ZeroFile zeroFile, byte[] fileBuffer)
-        {
-            Directory.CreateDirectory(zeroFile.Folder);
-            using var writer = new BinaryWriter(File.Open($"{zeroFile.Folder}{zeroFile.FileName}_{zeroFile.FileId}.{zeroFile.FileHeader.FileExtension}", FileMode.Create));
-
-            for (var i = zeroFile.StartingPosition; i < zeroFile.EndingPosition; i++)
-            {
-                writer.Write(fileBuffer[i]);
-            }
         }
 
         public void ExtractFiles(ZeroFile zeroFile, byte[] fileBuffer)
@@ -163,7 +156,7 @@ namespace Zero2Unpacker
                     {
                         zeroFile.EndingPosition = i + 1;
                         zeroFile.FileId = totalFilesFound;
-                        this.WriteBufferRangeToFile(zeroFile, fileBuffer);
+                        fileBuffer.WriteBufferRangeToFile(zeroFile);
 
                         currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
                         currentHeaderLookUpSize = zeroFile.FileHeader.HeaderSize;
@@ -194,7 +187,7 @@ namespace Zero2Unpacker
 
             zeroFile.EndingPosition = fileBuffer.Length;
             zeroFile.FileId = totalFilesFound;
-            this.WriteBufferRangeToFile(zeroFile, fileBuffer);
+            fileBuffer.WriteBufferRangeToFile(zeroFile);
         }
 
         public void ExtractDxhFiles(ZeroFile zeroFile, byte[] fileBuffer)
@@ -242,7 +235,7 @@ namespace Zero2Unpacker
 
 
                         zeroFile.FileId = totalFilesFound;
-                        this.WriteBufferRangeToFile(zeroFile, fileBuffer);
+                        fileBuffer.WriteBufferRangeToFile(zeroFile);
 
                         currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
                         currentHeaderLookUpSize = zeroFile.FileHeader.HeaderSize;
@@ -271,9 +264,9 @@ namespace Zero2Unpacker
             //this.WriteBufferRangeToFile(zeroFile, fileBuffer);
         }
 
-        public void DeLESSFiles()
+        public void DeLESSFiles(List<ArchiveFile> files)
         {
-            foreach (var file in this.ArchiveFiles)
+            foreach (var file in files)
             {
                 Console.WriteLine($"Unarchiving file: {file.FileName}");
                 var process = new Process
@@ -284,7 +277,7 @@ namespace Zero2Unpacker
                         WorkingDirectory = this._directory,
                         UseShellExecute = false,
                         CreateNoWindow = false,
-                        Arguments = file.FileName
+                        Arguments = $"{file.Folder}{file.FileName}"
                     }
                 };
 
@@ -304,8 +297,8 @@ namespace Zero2Unpacker
             {
                 try
                 {
-                    var fileBytes = File.ReadAllBytes($"{uncompressedFile.FileName}");
-                    //var fileBytesLED = File.ReadAllBytes($"{uncompressedFile.FileName}.LED");
+                    var fileBytes = File.ReadAllBytes($"{uncompressedFile.Folder}{uncompressedFile.FileName}");
+                    //var fileBytesLED = File.ReadAllBytes($"{uncompressedFile.Folder}{uncompressedFile.FileName}.LED");
 
                     var zeroFile = new ZeroFile()
                     {

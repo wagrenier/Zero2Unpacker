@@ -1,4 +1,6 @@
-﻿namespace Zero2Unpacker
+﻿using System.IO;
+
+namespace Zero2Unpacker
 {
     public static class ByteExtensionMethods
     {
@@ -68,6 +70,22 @@
                 }
             }
             return -1;
+        }
+
+        /// <summary>
+        /// Writes a buffer range to a new file.
+        /// </summary>
+        /// <param name="fileBuffer"></param>
+        /// <param name="zeroFile"></param>
+        public static void WriteBufferRangeToFile(this byte[] fileBuffer, ZeroFile zeroFile)
+        {
+            Directory.CreateDirectory(zeroFile.Folder);
+            using var writer = new BinaryWriter(File.Open($"{zeroFile.Folder}{zeroFile.FileName}_{zeroFile.FileId}.{zeroFile.FileHeader.FileExtension}", FileMode.Create));
+
+            for (var i = zeroFile.StartingPosition; i < zeroFile.EndingPosition; i++)
+            {
+                writer.Write(fileBuffer[i]);
+            }
         }
     }
 }

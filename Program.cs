@@ -19,44 +19,48 @@ namespace Zero2Unpacker
              *
              */
 
-            CommandLine.Parser.Default.ParseArguments<AddOptions, CommitOptions, CloneOptions>(args)
+            Parser.Default.ParseArguments<ExtractOptions, DecompressOptions>(args)
             .MapResult(
-                (AddOptions opts) => AA(opts),
-                (CommitOptions opts) => BB(opts),
-                (CloneOptions opts) => CC(opts),
+                (ExtractOptions opts) => ExtractAll(opts),
+                (DecompressOptions opts) => ExtractWithExistingArchives(opts),
                 errs => 1);
+        }
 
-            
-            var zero2ArchiveHandler = new Zero2ArchiveHandler("IMG_BD_US.BIN", "D:/DecompressFiles");
+        public static int ExtractAll(ExtractOptions options)
+        {
+            var zero2ArchiveHandler = new Zero2ArchiveHandler(options.BinFileName, options.FolderName);
+
+            zero2ArchiveHandler.ExtractAll();
+
+            return 0;
+        }
+
+        public static int ExtractWithExistingArchives(DecompressOptions options)
+        {
+            /*
+            var zero2ArchiveHandler = new Zero2ArchiveHandler(options.BinFileName, options.FolderName);
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
 
-            //zero2ArchiveHandler.ExtractAll();
-
-            zero2ArchiveHandler.BuildAlreadyExistingDeLESSArchive(1822);
-
-            //dataReader.DeLESSFiles();
+            zero2ArchiveHandler.BuildAlreadyExistingDeLESSArchive(options.ArchiveSize);
 
             zero2ArchiveHandler.MultiThreadExtract(12);
 
             watch.Stop();
             Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");
-        }
+            */
 
-        public static int AA(AddOptions options)
-        {
+            var zeroFileStr = new ZeroFile()
+            {
+                FileId = 1,
+                FileName = $"zeroFile1_0",
+                Folder = $"{options.FolderName}/Zero/Uncompressed/audio/",
+                FileHeader = new StrFile()
+            };
+
+            FileConverter.ConvertStrToWav(zeroFileStr, options.FolderName);
+
             return 0;
         }
-
-        public static int BB(CommitOptions options)
-        {
-            return 0;
-        }
-
-        public static int CC(CloneOptions options)
-        {
-            return 0;
-        }
-
     }
 }

@@ -1,43 +1,27 @@
-﻿using System.Collections.Generic;
-using CommandLine;
+﻿using CommandLine;
 
 namespace Zero2Unpacker
 {
-    public class Options
+	[Verb("extract", HelpText = "Extract the content of IMG_BD.BIN")]
+	public class ExtractOptions
+	{
+        [Option('f', "folder", Required = true, HelpText = "Folder where the IMG_BD.BIN is located.")]
+        public string FolderName { get; set; }
+
+        [Option('b', "bin", Default = "IMG_BD_US.BIN", Required = false, HelpText = "Name of the IMG_BD.BIN file, with extension.")]
+        public string BinFileName { get; set; }
+    }
+
+    [Verb("decompress", HelpText = "Extract the content of IMG_BD.BIN")]
+    public class DecompressOptions
     {
-		[Option('r', "read", Required = true, HelpText = "Input files to be processed.")]
-		public IEnumerable<string> InputFiles { get; set; }
+        [Option('f', "folder", Required = true, HelpText = "Folder where the IMG_BD.BIN is located.")]
+        public string FolderName { get; set; }
 
-		// Omitting long name, defaults to name of property, ie "--verbose"
-		[Option(
-		  Default = false,
-		  HelpText = "Prints all messages to standard output.")]
-		public bool Verbose { get; set; }
+        [Option('b', "bin", Default = "IMG_BD_US.BIN", Required = false, HelpText = "Name of the IMG_BD.BIN file, with extension.")]
+        public string BinFileName { get; set; }
 
-		[Option("stdin",
-		  Default = false,
-		  HelpText = "Read from stdin")]
-		public bool stdin { get; set; }
-
-		[Value(0, MetaName = "offset", HelpText = "File offset.")]
-		public long? Offset { get; set; }
-	}
-
-	[Verb("add", HelpText = "Add file contents to the index.")]
-	public class AddOptions
-	{
-		//normal options here
-	}
-
-	[Verb("commit", HelpText = "Record changes to the repository.")]
-	public class CommitOptions
-	{
-		//commit options here
-	}
-
-	[Verb("clone", HelpText = "Clone a repository into a new directory.")]
-	public class CloneOptions
-	{
-		//clone options here
-	}
+        [Option('a', "archivesize", Default = 1822, Required = false, HelpText = "Number of LESS archive files.")]
+        public int ArchiveSize { get; set; }
+    }
 }
