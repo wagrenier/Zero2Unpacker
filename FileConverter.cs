@@ -5,10 +5,10 @@ namespace Zero2Unpacker
 {
     public static class FileConverter
     {
-        public static void ConvertStrToWav(ZeroFile zeroFile, string dir)
+        public static void ConvertStrToWav(ZeroFile zeroFile)
         {
-            var orig = $"{zeroFile.Folder}{zeroFile.FileName}.{zeroFile.FileHeader.FileExtension}".Replace("/", "\\");
-            var dest = $"{zeroFile.Folder}{zeroFile.FileName}.wav".Replace("/", "\\");
+            var orig = $"{zeroFile.Folder}{zeroFile.FileName}_{zeroFile.FileId}.{zeroFile.FileHeader.FileExtension}".Replace("/", "\\");
+            var dest = $"{zeroFile.Folder}{zeroFile.FileName}_{zeroFile.FileId}.wav".Replace("/", "\\");
             var args = $"/IF41000 /IC2 /II800 /IH0 /OTWAVU /OF41000 /OC2 /OI0 \"{orig}\" \"{dest}\"";
 
             Console.WriteLine($"Extracting audio file: {zeroFile.FileName}.{zeroFile.FileHeader.FileExtension}");
@@ -24,7 +24,19 @@ namespace Zero2Unpacker
             };
 
             process.Start();
-            process.WaitForExit();
+
+            if (!process.WaitForExit(5000))
+            {
+                try
+                {
+                    process.Kill(true);
+                }
+                catch (InvalidOperationException)
+                {
+                    // The process already finished by itself, so use the counter value.
+                    //process.WaitForExit();
+                }
+            }
         }
     }
 }

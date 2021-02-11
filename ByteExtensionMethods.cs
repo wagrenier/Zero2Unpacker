@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Zero2Unpacker
 {
@@ -72,13 +74,44 @@ namespace Zero2Unpacker
             return -1;
         }
 
+        public static long BinaryStreamFindArrayBackwards(this BinaryReader binReader, byte[] bytesToFind, long fileSize)
+        {
+            while (binReader.BaseStream.Position < fileSize && binReader.BaseStream.Position > 0)
+            {
+                var latestBytes = binReader.ReadBytes(0x10);
+
+                var index = latestBytes.FindBytesIndexInByteBuffer(EmptyHeader);
+
+                if (index > -1)
+                {
+                    return binReader.BaseStream.Position - 0x10;
+                }
+
+                binReader.BaseStream.Position -= 0x20;
+            }
+
+            return -1;
+        }
+
         /// <summary>
         /// Writes a buffer range to a new file.
         /// </summary>
         /// <param name="fileBuffer"></param>
         /// <param name="zeroFile"></param>
-        public static void WriteBufferRangeToFile(this byte[] fileBuffer, ZeroFile zeroFile)
+        /// <param name="files"></param>
+        public static void WriteBufferRangeToFile(this byte[] fileBuffer, ZeroFile zeroFile, BlockingCollection<ZeroFile> files)
         {
+            files.Add(new ZeroFile()
+            {
+                StartingPosition = zeroFile.StartingPosition,
+                EndingPosition = zeroFile.EndingPosition,
+                FileSize = zeroFile.EndingPosition - zeroFile.StartingPosition,
+                FileId = zeroFile.FileId,
+                FileName = zeroFile.FileName,
+                Folder = zeroFile.Folder,
+                FileHeader = zeroFile.FileHeader
+            });
+
             Directory.CreateDirectory(zeroFile.Folder);
             using var writer = new BinaryWriter(File.Open($"{zeroFile.Folder}{zeroFile.FileName}_{zeroFile.FileId}.{zeroFile.FileHeader.FileExtension}", FileMode.Create));
 

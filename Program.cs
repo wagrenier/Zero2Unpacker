@@ -1,4 +1,5 @@
-﻿using CommandLine;
+﻿using System;
+using CommandLine;
 
 namespace Zero2Unpacker
 {
@@ -30,7 +31,7 @@ namespace Zero2Unpacker
 
         public static int ExtractWithExistingArchives(DecompressOptions options)
         {
-            /*
+            
             var zero2ArchiveHandler = new Zero2ArchiveHandler(options.BinFileName, options.FolderName);
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -38,11 +39,13 @@ namespace Zero2Unpacker
             zero2ArchiveHandler.BuildAlreadyExistingDeLESSArchive(options.ArchiveSize);
 
             zero2ArchiveHandler.MultiThreadExtract(12);
+            zero2ArchiveHandler.ConvertAudio();
 
             watch.Stop();
             Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");
-            */
+            
 
+            /*
             var zeroFileStr = new ZeroFile()
             {
                 FileId = 1,
@@ -52,7 +55,7 @@ namespace Zero2Unpacker
             };
 
             FileConverter.ConvertStrToWav(zeroFileStr, options.FolderName);
-
+            */
             return 0;
         }
     }

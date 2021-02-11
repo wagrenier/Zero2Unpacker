@@ -155,21 +155,30 @@
         public string FileExtension => _fileExtension;
     }
 
+    public class ZeroFile
+    {
+        public IFileHeader FileHeader;
+        public int FileId { get; set; }
+        public long StartingPosition { get; set; }
+        public long EndingPosition { get; set; }
+        public long FileSize { get; set; }
+        public string FileName { get; set; }
+        public string Folder { get; set; }
+
+        public ZeroFile()
+        {
+            this.FileId = 0;
+            this.StartingPosition = 0;
+            this.EndingPosition = 0;
+            this.FileSize = 0;
+            this.FileName = "zeroFile";
+        }
+    }
+
     public class ArchiveFile
     {
         public string Folder;
         public string FileName;
         public int FileId = 0;
-    }
-
-    public class ZeroFile
-    {
-        public IFileHeader FileHeader;
-        public int FileId = 0;
-        public int StartingPosition = 0;
-        public int EndingPosition = 0;
-        public long FileSize = 0;
-        public string FileName = "zeroFile";
-        public string Folder;
     }
 }
