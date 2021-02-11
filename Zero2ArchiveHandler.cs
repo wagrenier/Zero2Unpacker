@@ -34,7 +34,7 @@ namespace Zero2Unpacker
                 FileHeader = new DeLESSFile()
             });
 
-            this.DeLESSFiles(this.ArchiveFiles);
+            this.DeLessFiles(this.ArchiveFiles);
             this.MultiThreadExtract(coreCount);
         }
 
@@ -55,7 +55,7 @@ namespace Zero2Unpacker
             this._fileDb.WriteDbToFile();
         }
 
-        public void BuildAlreadyExistingDeLESSArchive(int numberDeLESSArchives)
+        public void BuildAlreadyExistingDeLessArchive(int numberDeLESSArchives)
         {
             for (var i = 0; i < numberDeLESSArchives; i++)
             {
@@ -363,7 +363,7 @@ namespace Zero2Unpacker
             //this.WriteBufferRangeToFile(zeroFile, fileBuffer);
         }
 
-        public void DeLESSFiles(List<ArchiveFile> files)
+        public void DeLessFiles(List<ArchiveFile> files)
         {
             foreach (var file in files)
             {
@@ -372,7 +372,7 @@ namespace Zero2Unpacker
                 {
                     StartInfo =
                     {
-                        FileName = $"{this._directory}/DeLESS.exe",
+                        FileName = $"DeLESS.exe",
                         WorkingDirectory = this._directory,
                         UseShellExecute = false,
                         CreateNoWindow = false,

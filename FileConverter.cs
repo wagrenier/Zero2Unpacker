@@ -30,6 +30,7 @@ namespace Zero2Unpacker
                 try
                 {
                     process.Kill(true);
+                    Console.WriteLine($"Extracting audio file: {zeroFile.FileName}.{zeroFile.FileHeader.FileExtension} took too long, it was killed!");
                 }
                 catch (InvalidOperationException)
                 {
