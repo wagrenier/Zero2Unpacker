@@ -36,7 +36,7 @@ namespace Zero2Unpacker
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
 
-            zero2ArchiveHandler.BuildAlreadyExistingDeLESSArchive(options.ArchiveSize);
+            zero2ArchiveHandler.BuildAlreadyExistingDeLessArchive(options.ArchiveSize);
 
             zero2ArchiveHandler.MultiThreadExtract(12);
             zero2ArchiveHandler.ConvertAudio();
