@@ -27,7 +27,7 @@ jobs:
       run: dotnet publish --no-build --verbosity normal -c Release --nologo -o "app"
     - name: Zip App
       run: |
-        zip app.zip ./app
+        zip zero2unpacker.zip ./app
     
     # Create the release:  https://github.com/actions/create-release
     - name: Create release
@@ -49,6 +49,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}  # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: ./
-        asset_name: app.zip
+        asset_path: ./zero2unpacker.zip
+        asset_name: zero2unpacker.zip
         asset_content_type: application/zip
