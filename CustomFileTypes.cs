@@ -67,7 +67,7 @@
     public class PssFile : IFileHeader
     {
         private static int _headerSize = 0x5;
-        private static int _endingSize = 0x4;
+        private static int _endingSize = 0x8;
 
         private static readonly byte[] _startingBytes = new byte[]
         {
@@ -77,7 +77,8 @@
 
         private static readonly byte[] _endingBytes = new byte[]
         {
-            0x00, 0x00, 0x01, 0xB9
+            0x00, 0x00, 0x01, 0xB9,
+            0x00, 0x00, 0x00, 0x00
         };
 
         private static string _fileExtension = "pss";

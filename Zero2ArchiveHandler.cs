@@ -195,6 +195,109 @@ namespace Zero2Unpacker
             fileBuffer.WriteBufferRangeToFile(zeroFile, files);
         }
 
+        public void ExtractFiles(ArchiveFile archiveFile, ZeroFile zeroFile, BlockingCollection<ZeroFile> files)
+        {
+            var fileSize = new FileInfo($"{archiveFile.Folder}{archiveFile.FileName}").Length;
+            using var gameArchiveBinReader = new BinaryReader(new FileStream($"{archiveFile.Folder}{archiveFile.FileName}", FileMode.Open, FileAccess.Read));
+
+            Directory.CreateDirectory(zeroFile.Folder);
+
+            var totalFilesFound = 0;
+            var fileFound = false;
+
+            var currentFile = new ZeroFile()
+            {
+                StartingPosition = 0,
+                FileSize = zeroFile.EndingPosition - zeroFile.StartingPosition,
+                FileId = totalFilesFound,
+                FileName = zeroFile.FileName,
+                Folder = zeroFile.Folder,
+                FileHeader = zeroFile.FileHeader
+            };
+
+            var currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
+
+            BinaryWriter writer = null;
+
+            // Loop until we reach the end of the file
+            while (gameArchiveBinReader.BaseStream.Position < fileSize)
+            {
+                // Read on line at a time
+                var latestBytes = gameArchiveBinReader.ReadBytes(0x10);
+
+                var readContainsHeader = latestBytes.FindBytesIndexInByteBuffer(currentHeaderLookUp);
+
+                if (readContainsHeader < 0)
+                {
+                    if (fileFound)
+                    {
+                        writer.Write(latestBytes);
+                    }
+                    continue;
+                }
+
+                if (fileFound)
+                {
+                    currentFile.EndingPosition = gameArchiveBinReader.BaseStream.Position - 0x10;
+
+                    currentFile.FileSize = currentFile.EndingPosition - currentFile.StartingPosition;
+
+                    zeroFile.FileId = totalFilesFound;
+
+                    files.Add(currentFile);
+
+                    currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
+
+                    fileFound = false;
+                    totalFilesFound++;
+
+                    currentFile = new ZeroFile()
+                    {
+                        StartingPosition = gameArchiveBinReader.BaseStream.Position + 0x1,
+                        EndingPosition = zeroFile.EndingPosition,
+                        FileSize = zeroFile.EndingPosition - zeroFile.StartingPosition,
+                        FileId = totalFilesFound,
+                        FileName = zeroFile.FileName,
+                        Folder = zeroFile.Folder,
+                        FileHeader = zeroFile.FileHeader
+                    };
+
+                    if (zeroFile.FileHeader.EndingBytes == null)
+                    {
+                        writer.Close();
+                    }
+                    else
+                    {
+                        writer.Write(currentHeaderLookUp);
+                        writer.Close();
+                    }
+                }
+                else if (zeroFile.FileHeader.EndingBytes != null)
+                {
+                    currentFile.StartingPosition = gameArchiveBinReader.BaseStream.Position - 0x10;
+
+                    currentHeaderLookUp = zeroFile.FileHeader.EndingBytes;
+                    fileFound = true;
+
+                    writer = new BinaryWriter(File.Open($"{currentFile.Folder}{currentFile.FileName}_{currentFile.FileId}.{zeroFile.FileHeader.FileExtension}", FileMode.Create));
+
+                    gameArchiveBinReader.BaseStream.Position -= 0x10;
+                }
+                else
+                {
+                    currentFile.StartingPosition = gameArchiveBinReader.BaseStream.Position - 0x10;
+                    fileFound = true;
+                    writer = new BinaryWriter(File.Open($"{currentFile.Folder}{currentFile.FileName}_{currentFile.FileId}.{zeroFile.FileHeader.FileExtension}", FileMode.Create));
+                    writer.Write(latestBytes);
+                }
+            }
+
+            if (writer != null)
+            {
+                writer.Close();
+            }
+        }
+
         public void ExtractDxhFiles(ArchiveFile archiveFile, ZeroFile zeroFile, BlockingCollection<ZeroFile> files)
         {
             var fileSize = new FileInfo($"{archiveFile.Folder}{archiveFile.FileName}").Length;
@@ -280,89 +383,6 @@ namespace Zero2Unpacker
             }
         }
 
-        public void ExtractDxhFiles(ZeroFile zeroFile, byte[] fileBuffer, BlockingCollection<ZeroFile> files)
-        {
-            /*
-             * At first sigh, a few file types require this type of logic, everything with DXH after
-             *
-             *  1) Trouver cette ligne
-             *  0x00, 0x07, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77
-             *
-             *  2) Le file va se rendre jusqu'au header DXH
-             *  00 44 58 48 00 10 00 00 02 00 00 00 00 00 00 00
-             *
-             *  3) Mettre le curseur actuel sur la ligne 1)
-             *
-             *  4) Le audio file sera donc la premiere ligne (inclue) de 00 avant 1) jusqu'au byte avant 2) 
-             *  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-             */
-
-            var searchPosition = 0;
-            var totalFilesFound = 0;
-            var fileFound = false;
-            var currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
-            var currentHeaderLookUpSize = zeroFile.FileHeader.HeaderSize;
-
-            for (var i = 0; i < fileBuffer.Length; i++)
-            {
-                if (fileBuffer[i] != currentHeaderLookUp[searchPosition])
-                {
-                    searchPosition = 0;
-                }
-                else if (fileBuffer[i] == currentHeaderLookUp[searchPosition])
-                {
-                    searchPosition++;
-                    if (searchPosition != currentHeaderLookUp.Length)
-                    {
-                        continue;
-                    }
-
-                    if (fileFound)
-                    {
-                        zeroFile.EndingPosition = i - currentHeaderLookUpSize + 1;
-
-                        zeroFile.StartingPosition = fileBuffer.FindBytesIndexBackWardInByteBuffer(ByteExtensionMethods.EmptyHeader, (int)zeroFile.StartingPosition);
-
-                        zeroFile.FileId = totalFilesFound;
-
-                        fileBuffer.WriteBufferRangeToFile(new ZeroFile()
-                        {
-                            StartingPosition = zeroFile.StartingPosition,
-                            EndingPosition = zeroFile.EndingPosition,
-                            FileSize = zeroFile.EndingPosition - zeroFile.StartingPosition,
-                            FileId = totalFilesFound,
-                            FileName = zeroFile.FileName,
-                            Folder = zeroFile.Folder,
-                            FileHeader = zeroFile.FileHeader
-                        }, files);
-
-                        currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
-                        currentHeaderLookUpSize = zeroFile.FileHeader.HeaderSize;
-                        fileFound = false;
-                        totalFilesFound++;
-                    }
-                    else if (zeroFile.FileHeader.EndingBytes != null)
-                    {
-                        zeroFile.StartingPosition = i;
-                        currentHeaderLookUp = zeroFile.FileHeader.EndingBytes;
-                        currentHeaderLookUpSize = zeroFile.FileHeader.EndingSize;
-                        fileFound = true;
-                    }
-
-                    searchPosition = 0;
-                }
-            }
-
-            if (!fileFound)
-            {
-                return;
-            }
-
-            zeroFile.EndingPosition = fileBuffer.Length;
-            zeroFile.FileId = totalFilesFound;
-            //this.WriteBufferRangeToFile(zeroFile, fileBuffer);
-        }
-
         public void DeLessFiles(List<ArchiveFile> files)
         {
             foreach (var file in files)
@@ -420,10 +440,23 @@ namespace Zero2Unpacker
                         FileHeader = new StrFile()
                     };
 
-                    //this.ExtractFiles(zeroFile, fileBytesLED);
+                    // Extract cutscenes
+                    // Extracts all cutscenes into parts, similar to how a ps2 does
                     //this.ExtractFiles(zeroFilePss, fileBytes, this._fileDb.VideoFiles);
+
+                    // Extracts cutscenes has one file instead of chunks
+                    //zeroFilePss.Folder += "BinReader/";
+                    //this.ExtractFiles(uncompressedFile, zeroFilePss, this._fileDb.VideoFiles);
+
+                    // Extract Audio
                     //this.ExtractDxhFiles(zeroFileStr, fileBytes, this._fileDb.AudioFiles);
-                    this.ExtractDxhFiles(uncompressedFile, zeroFileStr, this._fileDb.AudioFiles);
+                    //this.ExtractDxhFiles(uncompressedFile, zeroFileStr, this._fileDb.AudioFiles);
+
+                    // Extract Textures
+                    //this.ExtractFiles(zeroFile, fileBytesLED);
+                    zeroFile.Folder += "BinReader/";
+                    uncompressedFile.FileName += ".LED";
+                    this.ExtractFiles(uncompressedFile, zeroFile, this._fileDb.TextureFiles); // Doesn't work properly rn
 
                     Console.WriteLine($"File: {uncompressedFile.FileName}, extracted!");
                 }
