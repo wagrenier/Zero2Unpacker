@@ -29,8 +29,8 @@ jobs:
         
     - name: Restore dependencies
       run: |
-        dotnet restore
-        echo inputs.test
+        echo ${{ inputs.test }}
+        dotnet restore        
     
     - name: Build
       run: dotnet build --no-restore -c Release
