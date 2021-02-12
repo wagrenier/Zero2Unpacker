@@ -175,11 +175,4 @@
             this.FileName = "zeroFile";
         }
     }
-
-    public class ArchiveFile
-    {
-        public string Folder;
-        public string FileName;
-        public int FileId = 0;
-    }
 }

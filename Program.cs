@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using CommandLine;
 
 namespace Zero2Unpacker
@@ -8,12 +7,6 @@ namespace Zero2Unpacker
     {
         public static void Main(string[] args)
         {
-            /*
-             *
-             * Memory location with RegisterFile: 0x003c7fdb
-             *
-             */
-
             Parser.Default.ParseArguments<ExtractOptions, DecompressOptions>(args)
             .MapResult(
                 (ExtractOptions opts) => ExtractAll(opts),
@@ -24,9 +17,16 @@ namespace Zero2Unpacker
         public static int ExtractAll(ExtractOptions options)
         {
             var zero2ArchiveHandler = new Zero2ArchiveHandler(options.BinFileName, options.FolderName);
+
             var watch = System.Diagnostics.Stopwatch.StartNew();
 
-            zero2ArchiveHandler.ExtractAll();
+            zero2ArchiveHandler.ExtractAll(options.ThreadCount);
+
+            if (options.ConvertFiles)
+            {
+                zero2ArchiveHandler.ConvertAudio();
+            }
+
             watch.Stop();
 
             Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");
@@ -36,14 +36,18 @@ namespace Zero2Unpacker
         public static int ExtractWithExistingArchives(DecompressOptions options)
         {
             
-            var zero2ArchiveHandler = new Zero2ArchiveHandler(options.BinFileName, options.FolderName);
+            var zero2ArchiveHandler = new Zero2ArchiveHandler(options.BinFileName, options.FolderName, options.DatabaseFile);
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            zero2ArchiveHandler.ExtractAll();
-            //zero2ArchiveHandler.BuildAlreadyExistingDeLessArchive(options.ArchiveSize);
 
-            //zero2ArchiveHandler.MultiThreadExtract(12);
-            //zero2ArchiveHandler.ConvertAudio();
+            zero2ArchiveHandler.BuildAlreadyExistingDeLessArchive(options.ArchiveSize);
+
+            zero2ArchiveHandler.MultiThreadAction(options.ThreadCount, zero2ArchiveHandler.FileDb.ArchiveFiles, zero2ArchiveHandler.ExtractArchives);
+
+            if (options.ConvertFiles)
+            {
+                zero2ArchiveHandler.ConvertAudio();
+            }
 
             watch.Stop();
             Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");

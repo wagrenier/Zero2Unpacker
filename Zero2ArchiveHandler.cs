@@ -11,23 +11,23 @@ namespace Zero2Unpacker
 {
     public class Zero2ArchiveHandler
     {
-        public List<ArchiveFile> ArchiveFiles = new List<ArchiveFile>();
-        private readonly FileDb _fileDb = new FileDb();
+        public readonly FileDb FileDb;
         private readonly string _fileName;
         private readonly string _directory;
 
-        public Zero2ArchiveHandler(string fileName, string directory)
+        public Zero2ArchiveHandler(string fileName, string directory, string? dbFile = null)
         {
             this._fileName = fileName;
             this._directory = directory;
+
+            this.FileDb = string.IsNullOrWhiteSpace(dbFile) ? new FileDb() : JsonSerializer.Deserialize<FileDb>(File.ReadAllText(dbFile));
         }
 
-        public void ExtractAll(int coreCount = 12)
+        public void ExtractAll(int coreCount)
         {
-
             this.SplitArchives(new ZeroFile()
             {
-                Folder = $"{this._directory}/Zero/LESS/",
+                Folder = $"{this._directory}/Zero2/LESS/",
                 FileName = "zeroFile",
                 StartingPosition = 0,
                 EndingPosition = 0,
@@ -35,39 +35,39 @@ namespace Zero2Unpacker
                 FileHeader = new DeLESSFile()
             });
 
-            this.DeLessFiles(this.ArchiveFiles);
-            this.MultiThreadExtract(coreCount);
+            this.MultiThreadAction(coreCount, this.FileDb.ArchiveFiles, this.DeLessFiles);
+            this.MultiThreadAction(coreCount, this.FileDb.ArchiveFiles, this.ExtractArchives);
         }
 
-        public void MultiThreadExtract(int numberCores)
+        public void MultiThreadAction(int coreCount, List<ZeroFile> files, Action<object?> action)
         {
             // Split the list of files to handle into the number of available cores
-            var listCoreSize = this.ArchiveFiles.Count / numberCores;
+            var listCoreSize = files.Count / coreCount;
 
-            var threadList = new Task[numberCores];
+            var threadList = new Task[coreCount];
 
-            for (var i = 0; i < numberCores; i++)
+            for (var i = 0; i < coreCount; i++)
             {
-                threadList[i] = Task.Factory.StartNew(this.ExtractArchives, this.ArchiveFiles.GetRange(i * listCoreSize, listCoreSize));
+                threadList[i] = Task.Factory.StartNew(action, files.GetRange(i * listCoreSize, listCoreSize));
             }
 
             Task.WaitAll(threadList);
 
-            this._fileDb.WriteDbToFile();
+            this.FileDb.WriteDbToFile();
         }
 
-        public void BuildAlreadyExistingDeLessArchive(int numberDeLESSArchives)
+        public void BuildAlreadyExistingDeLessArchive(int numberDeLessArchives)
         {
-            for (var i = 0; i < numberDeLESSArchives; i++)
+            for (var i = 0; i < numberDeLessArchives; i++)
             {
-                var currentFile = new ArchiveFile()
+                var currentFile = new ZeroFile()
                 {
                     FileId = i,
-                    Folder = $"{this._directory}/Zero/LESS/",
+                    Folder = $"{this._directory}/Zero2/LESS/",
                     FileName = $"zeroFile{i}.LESS"
                 };
 
-                this.ArchiveFiles.Add(currentFile);
+                this.FileDb.ArchiveFiles.Add(currentFile);
             }
         }
 
@@ -80,7 +80,7 @@ namespace Zero2Unpacker
             var fileSize = new FileInfo($"{this._directory}/{this._fileName}").Length;;
             using var gameArchiveBinReader = new BinaryReader(new FileStream($"{this._directory}/{this._fileName}", FileMode.Open, FileAccess.Read));
 
-            var currentFile = new ArchiveFile
+            var currentFile = new ZeroFile
             {
                 Folder = zeroFile.Folder,
                 FileName = $"{zeroFile.FileName}{zeroFile.FileId}.{zeroFile.FileHeader.FileExtension}",
@@ -94,9 +94,9 @@ namespace Zero2Unpacker
             // Skips the header of the first file
             writer.Write(gameArchiveBinReader.ReadBytes(0x10));
 
-            this.ArchiveFiles.Add(currentFile);
+            this.FileDb.ArchiveFiles.Add(currentFile);
 
-            //Loop until we reach the end of the file
+            // Loop until we reach the end of the file
             while (gameArchiveBinReader.BaseStream.Position < fileSize)
             {
                 // Read on line at a time
@@ -111,7 +111,7 @@ namespace Zero2Unpacker
                     
                     zeroFile.FileId++;
 
-                    currentFile = new ArchiveFile
+                    currentFile = new ZeroFile
                     {
                         Folder = zeroFile.Folder,
                         FileName = $"{zeroFile.FileName}{zeroFile.FileId}.{zeroFile.FileHeader.FileExtension}",
@@ -119,7 +119,8 @@ namespace Zero2Unpacker
                     };
 
                     writer = new BinaryWriter(File.Open($"{currentFile.Folder}{currentFile.FileName}", FileMode.Create));
-                    this.ArchiveFiles.Add(currentFile);
+                    this.FileDb.ArchiveFiles.Add(currentFile);
+                    Console.WriteLine($"Discovered file: {currentFile.FileName}");
                 }
 
                 writer.Write(latestBytes);
@@ -128,7 +129,7 @@ namespace Zero2Unpacker
             writer.Close();
         }
 
-        public void ExtractFiles(ArchiveFile archiveFile, ZeroFile zeroFile, BlockingCollection<ZeroFile> files)
+        public void ExtractFiles(ZeroFile archiveFile, ZeroFile zeroFile, BlockingCollection<ZeroFile> files)
         {
             var fileSize = new FileInfo($"{archiveFile.Folder}{archiveFile.FileName}").Length;
             using var gameArchiveBinReader = new BinaryReader(new FileStream($"{archiveFile.Folder}{archiveFile.FileName}", FileMode.Open, FileAccess.Read));
@@ -150,7 +151,7 @@ namespace Zero2Unpacker
 
             var currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
 
-            BinaryWriter writer = null;
+            BinaryWriter? writer = null;
 
             // Loop until we reach the end of the file
             while (gameArchiveBinReader.BaseStream.Position < fileSize)
@@ -164,7 +165,7 @@ namespace Zero2Unpacker
                 {
                     if (fileFound)
                     {
-                        writer.Write(latestBytes);
+                        writer?.Write(latestBytes);
                     }
                     continue;
                 }
@@ -197,13 +198,13 @@ namespace Zero2Unpacker
 
                     if (zeroFile.FileHeader.EndingBytes == null)
                     {
-                        writer.Close();
+                        writer?.Close();
                         gameArchiveBinReader.BaseStream.Position -= 0x10;
                     }
                     else
                     {
-                        writer.Write(currentHeaderLookUp);
-                        writer.Close();
+                        writer?.Write(currentHeaderLookUp);
+                        writer?.Close();
                     }
                 }
                 else if (zeroFile.FileHeader.EndingBytes != null)
@@ -232,7 +233,7 @@ namespace Zero2Unpacker
             }
         }
 
-        public void ExtractDxhFiles(ArchiveFile archiveFile, ZeroFile zeroFile, BlockingCollection<ZeroFile> files)
+        public void ExtractDxhFiles(ZeroFile archiveFile, ZeroFile zeroFile, BlockingCollection<ZeroFile> files)
         {
             var fileSize = new FileInfo($"{archiveFile.Folder}{archiveFile.FileName}").Length;
             using var gameArchiveBinReader = new BinaryReader(new FileStream($"{archiveFile.Folder}{archiveFile.FileName}", FileMode.Open, FileAccess.Read));
@@ -317,8 +318,13 @@ namespace Zero2Unpacker
             }
         }
 
-        public void DeLessFiles(List<ArchiveFile> files)
+        public void DeLessFiles(object? filesObj)
         {
+            if (!(filesObj is List<ZeroFile> files))
+            {
+                return;
+            }
+
             foreach (var file in files)
             {
                 Console.WriteLine($"Unarchiving file: {file.FileName}");
@@ -341,7 +347,7 @@ namespace Zero2Unpacker
 
         public void ExtractArchives(object? filesToExtractObj)
         {
-            if (!(filesToExtractObj is List<ArchiveFile> filesToExtract))
+            if (!(filesToExtractObj is List<ZeroFile> filesToExtract))
             {
                 return;
             }
@@ -350,50 +356,38 @@ namespace Zero2Unpacker
             {
                 try
                 {
-                    //var fileBytes = File.ReadAllBytes($"{uncompressedFile.Folder}{uncompressedFile.FileName}");
-                    //var fileBytesLED = File.ReadAllBytes($"{uncompressedFile.Folder}{uncompressedFile.FileName}.LED");
-
                     var zeroFile = new ZeroFile()
                     {
                         FileName = $"zeroFile{uncompressedFile.FileId}",
-                        Folder = $"{this._directory}/Zero/Uncompressed/tm2/",
+                        Folder = $"{this._directory}/Zero2/Uncompressed/tm2/",
                         FileHeader = new Tim2File()
                     };
 
                     var zeroFilePss = new ZeroFile()
                     {
                         FileName = $"zeroFile{uncompressedFile.FileId}",
-                        Folder = $"{this._directory}/Zero/Uncompressed/pss/",
+                        Folder = $"{this._directory}/Zero2/Uncompressed/pss/",
                         FileHeader = new PssFile()
                     };
 
                     var zeroFileStr = new ZeroFile()
                     {
                         FileName = $"zeroFile{uncompressedFile.FileId}",
-                        Folder = $"{this._directory}/Zero/Uncompressed/audio/",
+                        Folder = $"{this._directory}/Zero2/Uncompressed/audio/",
                         FileHeader = new StrFile()
                     };
 
-                    // Extract cutscenes
-                    // Extracts all cutscenes into parts, similar to how a ps2 does
-                    //this.ExtractFiles(zeroFilePss, fileBytes, this._fileDb.VideoFiles);
-
                     // Extracts cutscenes has one file instead of chunks
-                    zeroFilePss.Folder += "BinReader/";
-                    this.ExtractFiles(uncompressedFile, zeroFilePss, this._fileDb.VideoFiles);
+                    this.ExtractFiles(uncompressedFile, zeroFilePss, this.FileDb.VideoFiles);
 
                     // Extract Audio
-                    //this.ExtractDxhFiles(zeroFileStr, fileBytes, this._fileDb.AudioFiles);
-                    zeroFileStr.Folder += "BinReader/";
-                    this.ExtractDxhFiles(uncompressedFile, zeroFileStr, this._fileDb.AudioFiles);
+                    this.ExtractDxhFiles(uncompressedFile, zeroFileStr, this.FileDb.AudioFiles);
 
                     // Extract Textures
-                    //this.ExtractFiles(zeroFile, fileBytesLED);
-                    zeroFile.Folder += "BinReader/";
                     uncompressedFile.FileName += ".LED";
-                    this.ExtractFiles(uncompressedFile, zeroFile, this._fileDb.TextureFiles); // Doesn't work properly rn
+                    this.ExtractFiles(uncompressedFile, zeroFile, this.FileDb.TextureFiles);
 
-                    Console.WriteLine($"File: {uncompressedFile.FileName}, extracted!");
+                    Console.WriteLine($"File: {uncompressedFile.FileName.Replace(".LED", "")}, extracted!");
                 }
                 catch (Exception e)
                 {
@@ -404,7 +398,7 @@ namespace Zero2Unpacker
 
         public void ConvertAudio()
         {
-            foreach (var audioFile in this._fileDb.AudioFiles)
+            foreach (var audioFile in this.FileDb.AudioFiles)
             {
                 FileConverter.ConvertStrToWav(audioFile);
             }
