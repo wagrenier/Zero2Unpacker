@@ -29,7 +29,7 @@ jobs:
         
     - name: Restore dependencies
       run: |
-        echo ${{ INPUT_test }}
+        echo ${{ INPUT_TEST }}
         dotnet restore
                
     
