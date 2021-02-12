@@ -29,7 +29,7 @@ jobs:
         
     - name: Restore dependencies
       run: |
-        echo ${{ test }}
+        echo ${{ test.default }}
         dotnet restore        
     
     - name: Build
