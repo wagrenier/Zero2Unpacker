@@ -29,9 +29,7 @@ jobs:
         
     - name: Restore dependencies
       run: |
-        args:
-          - ${{ inputs.test }} 
-        echo ${{ inputs.test }}
+        echo ${{ INPUT_test }}
         dotnet restore
                
     
