@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using CommandLine;
 
 namespace Zero2Unpacker
@@ -12,6 +13,8 @@ namespace Zero2Unpacker
              * Memory location with RegisterFile: 0x003c7fdb
              *
              */
+
+            Console.WriteLine(GitVersionInformation.FullSemVer);
 
             Parser.Default.ParseArguments<ExtractOptions, DecompressOptions>(args)
             .MapResult(
