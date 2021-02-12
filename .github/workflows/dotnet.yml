@@ -29,7 +29,7 @@ jobs:
         
     - name: Restore dependencies
       run: |
-        echo ${{ INPUT_TEST }}
+        echo ${{ on.workflow_dispatch.inputs.test }}
         dotnet restore
                
     
