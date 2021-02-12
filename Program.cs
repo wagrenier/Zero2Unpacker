@@ -14,8 +14,6 @@ namespace Zero2Unpacker
              *
              */
 
-            Console.WriteLine(GitVersionInformation.FullSemVer);
-
             Parser.Default.ParseArguments<ExtractOptions, DecompressOptions>(args)
             .MapResult(
                 (ExtractOptions opts) => ExtractAll(opts),
