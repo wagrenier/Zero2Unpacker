@@ -127,74 +127,6 @@ namespace Zero2Unpacker
             writer.Close();
         }
 
-        public void ExtractFiles(ZeroFile zeroFile, byte[] fileBuffer, BlockingCollection<ZeroFile> files)
-        {
-            /*
-             * 1) Find the file HEADER
-             * 2) Flip to record data
-             * 3) Look for file END
-             * 4) Save file
-             * 5) GOTO 1) Until end of file
-             */
-
-            var searchPosition = 0;
-            var totalFilesFound = 0;
-            var fileFound = false;
-            var currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
-            var currentHeaderLookUpSize = zeroFile.FileHeader.HeaderSize;
-
-            for (var i = 0; i < fileBuffer.Length; i++)
-            {
-                if (fileBuffer[i] != currentHeaderLookUp[searchPosition])
-                {
-                    searchPosition = 0;
-                }
-                else if (fileBuffer[i] == currentHeaderLookUp[searchPosition])
-                {
-                    searchPosition++;
-                    if (searchPosition != currentHeaderLookUp.Length)
-                    {
-                        continue;
-                    }
-
-                    if (fileFound)
-                    {
-                        zeroFile.EndingPosition = i + 1;
-                        zeroFile.FileId = totalFilesFound;
-                        fileBuffer.WriteBufferRangeToFile(zeroFile, files);
-
-                        currentHeaderLookUp = zeroFile.FileHeader.StartingBytes;
-                        currentHeaderLookUpSize = zeroFile.FileHeader.HeaderSize;
-                        fileFound = false;
-                        totalFilesFound++;
-                    }
-                    else if(zeroFile.FileHeader.EndingBytes != null)
-                    {
-                        zeroFile.StartingPosition = i - currentHeaderLookUpSize + 1;
-                        currentHeaderLookUp = zeroFile.FileHeader.EndingBytes;
-                        currentHeaderLookUpSize = zeroFile.FileHeader.EndingSize;
-                        fileFound = true;
-                    }
-                    else
-                    {
-                        zeroFile.StartingPosition = i - currentHeaderLookUpSize + 1;
-                        fileFound = true;
-                    }
-
-                    searchPosition = 0;
-                }
-            }
-
-            if (!fileFound)
-            {
-                return;
-            }
-
-            zeroFile.EndingPosition = fileBuffer.Length;
-            zeroFile.FileId = totalFilesFound;
-            fileBuffer.WriteBufferRangeToFile(zeroFile, files);
-        }
-
         public void ExtractFiles(ArchiveFile archiveFile, ZeroFile zeroFile, BlockingCollection<ZeroFile> files)
         {
             var fileSize = new FileInfo($"{archiveFile.Folder}{archiveFile.FileName}").Length;
@@ -265,6 +197,7 @@ namespace Zero2Unpacker
                     if (zeroFile.FileHeader.EndingBytes == null)
                     {
                         writer.Close();
+                        gameArchiveBinReader.BaseStream.Position -= 0x10;
                     }
                     else
                     {
@@ -445,12 +378,13 @@ namespace Zero2Unpacker
                     //this.ExtractFiles(zeroFilePss, fileBytes, this._fileDb.VideoFiles);
 
                     // Extracts cutscenes has one file instead of chunks
-                    //zeroFilePss.Folder += "BinReader/";
-                    //this.ExtractFiles(uncompressedFile, zeroFilePss, this._fileDb.VideoFiles);
+                    zeroFilePss.Folder += "BinReader/";
+                    this.ExtractFiles(uncompressedFile, zeroFilePss, this._fileDb.VideoFiles);
 
                     // Extract Audio
                     //this.ExtractDxhFiles(zeroFileStr, fileBytes, this._fileDb.AudioFiles);
-                    //this.ExtractDxhFiles(uncompressedFile, zeroFileStr, this._fileDb.AudioFiles);
+                    zeroFileStr.Folder += "BinReader/";
+                    this.ExtractDxhFiles(uncompressedFile, zeroFileStr, this._fileDb.AudioFiles);
 
                     // Extract Textures
                     //this.ExtractFiles(zeroFile, fileBytesLED);

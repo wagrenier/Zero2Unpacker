@@ -23,9 +23,12 @@ namespace Zero2Unpacker
         public static int ExtractAll(ExtractOptions options)
         {
             var zero2ArchiveHandler = new Zero2ArchiveHandler(options.BinFileName, options.FolderName);
+            var watch = System.Diagnostics.Stopwatch.StartNew();
 
             zero2ArchiveHandler.ExtractAll();
+            watch.Stop();
 
+            Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");
             return 0;
         }
 
@@ -35,27 +38,15 @@ namespace Zero2Unpacker
             var zero2ArchiveHandler = new Zero2ArchiveHandler(options.BinFileName, options.FolderName);
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
+            zero2ArchiveHandler.ExtractAll();
+            //zero2ArchiveHandler.BuildAlreadyExistingDeLessArchive(options.ArchiveSize);
 
-            zero2ArchiveHandler.BuildAlreadyExistingDeLessArchive(options.ArchiveSize);
-
-            zero2ArchiveHandler.MultiThreadExtract(12);
-            zero2ArchiveHandler.ConvertAudio();
+            //zero2ArchiveHandler.MultiThreadExtract(12);
+            //zero2ArchiveHandler.ConvertAudio();
 
             watch.Stop();
             Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");
             
-
-            /*
-            var zeroFileStr = new ZeroFile()
-            {
-                FileId = 1,
-                FileName = $"zeroFile1_0",
-                Folder = $"{options.FolderName}/Zero/Uncompressed/audio/",
-                FileHeader = new StrFile()
-            };
-
-            FileConverter.ConvertStrToWav(zeroFileStr, options.FolderName);
-            */
             return 0;
         }
     }
