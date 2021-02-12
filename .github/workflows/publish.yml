@@ -3,7 +3,7 @@ name: Publish New Version
 on: 
   workflow_dispatch:
     inputs:
-      Patch Notes:
+      PatchNotes:
         description: 'Changes since last publish'     
         required: true
         default: 'Added stuff'
@@ -65,6 +65,7 @@ jobs:
       with:
         tag_name: "${{ steps.gitversion.outputs.majorMinorPatch }}"
         release_name: Zero2Unpacker Release ${{ steps.gitversion.outputs.majorMinorPatch }}
+        body: ${{ github.event.inputs.patchnotes }}
         draft: false
         prerelease: ${{ github.event.inputs.pre-release }}
 
