@@ -7,6 +7,10 @@ on:
         description: 'Changes since last publish'     
         required: true
         default: 'Added stuff'
+      Pre-release:
+        description: 'Is this a pre-release'     
+        required: true
+        default: 'false'
 
 jobs:
   build:
@@ -62,7 +66,7 @@ jobs:
         tag_name: "${{ steps.gitversion.outputs.majorMinorPatch }}"
         release_name: Zero2Unpacker Release ${{ steps.gitversion.outputs.majorMinorPatch }}
         draft: false
-        prerelease: false
+        prerelease: ${{ github.event.inputs.pre-release }}
 
     # Releases the zipped assets
     - name: Update release asset
