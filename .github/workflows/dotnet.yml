@@ -1,12 +1,6 @@
 name: .NET
 
 on:
-  workflow_dispatch:
-    inputs:
-      test:
-        description: 'Is this a pre-release'     
-        required: true
-        default: 'false'  
   push:
     branches: [ main ]
   pull_request:
@@ -28,10 +22,7 @@ jobs:
         dotnet-version: 5.0.x
         
     - name: Restore dependencies
-      run: |
-        echo ${{ github.event.inputs.test }}
-        dotnet restore
-               
+      run: dotnet restore
     
     - name: Build
       run: dotnet build --no-restore -c Release
