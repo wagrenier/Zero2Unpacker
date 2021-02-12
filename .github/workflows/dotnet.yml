@@ -39,7 +39,7 @@ jobs:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
         draft: false
-        prerelease: false
+        prerelease: true
 
     # Upload release asset:   https://github.com/actions/upload-release-asset
     - name: Update release asset
