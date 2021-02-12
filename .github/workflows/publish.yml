@@ -32,12 +32,9 @@ jobs:
       run: dotnet test --no-build --verbosity normal
     
     - name: Publish
-      run: dotnet publish --no-build --verbosity normal -c Release --nologo -o "app"
-    
-    - name: Zip App
-      run: |
-        zip -r zero2unpacker.zip ./app/ --junk-paths
+      run: dotnet publish -c Release -p:PublishSingleFile=true -r win-x64 -o ./app --nologo
         
+    # Setups the env vars for gitversion
     - uses: gittools/actions/gitversion/setup@v0.9.7
       env:
         ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -49,18 +46,25 @@ jobs:
       uses: gittools/actions/gitversion/execute@v0.9.7
       env:
         ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+    
+    # Zips the binaries and required files
+    - name: Zip App
+      run: |
+        zip -r zero2unpacker_v${{ steps.gitversion.outputs.majorMinorPatch }}.zip ./app/Zero2Unpacker.exe ./DeLESS.exe ./MFAudio.exe --junk-paths
         
+    # Creates a new TAG version
     - name: Create release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
       with:
-        tag_name: "${{ steps.gitversion.outputs.fullSemVer }}"
-        release_name: Zero2Unpacker Release ${{ steps.gitversion.outputs.fullSemVer }}
+        tag_name: "${{ steps.gitversion.outputs.majorMinorPatch }}"
+        release_name: Zero2Unpacker Release ${{ steps.gitversion.outputs.majorMinorPatch }}
         draft: false
         prerelease: false
 
+    # Releases the zipped assets
     - name: Update release asset
       id: upload-release-asset
       uses: actions/upload-release-asset@v1
