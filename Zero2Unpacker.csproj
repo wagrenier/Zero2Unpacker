@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <ApplicationIcon>zero2unpacker_icon.ico</ApplicationIcon>
+    <StartupObject>Zero2Unpacker.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
