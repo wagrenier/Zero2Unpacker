@@ -3,7 +3,7 @@ name: .NET
 on:
   workflow_dispatch:
     inputs:
-      Test:
+      test:
         description: 'Is this a pre-release'     
         required: true
         default: 'false'  
