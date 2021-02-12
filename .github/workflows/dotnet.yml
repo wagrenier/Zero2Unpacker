@@ -30,9 +30,10 @@ jobs:
         zip zero2unpacker.zip ./app
         
     - uses: gittools/actions/gitversion/setup@v0.9.2
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
       with:
           versionSpec: '5.0.x'
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
     # Create the release:  https://github.com/actions/create-release
     - name: Create release
       id: create_release
