@@ -27,7 +27,7 @@ jobs:
       run: dotnet publish --no-build --verbosity normal -c Release --nologo -o "app"
     - name: Zip App
       run: |
-        zip ./app
+        zip app.zip ./app
     
     # Create the release:  https://github.com/actions/create-release
     - name: Create release
