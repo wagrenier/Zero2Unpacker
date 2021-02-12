@@ -53,7 +53,7 @@ jobs:
         tag_name: "${{ steps.gitversion.outputs.fullSemVer }}"
         release_name: Zero2Unpacker Release ${{ steps.gitversion.outputs.fullSemVer }}
         draft: false
-        prerelease: true
+        prerelease: false
 
     # Upload release asset:   https://github.com/actions/upload-release-asset
     - name: Update release asset
