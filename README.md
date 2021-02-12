@@ -1,5 +1,6 @@
 # Zero2Unpacker
 ![.NET](https://github.com/wagrenier/Zero2Unpacker/workflows/.NET/badge.svg)
+![Published Version](https://github.com/wagrenier/Zero2Unpacker/workflows/Publish%20New%20Version/badge.svg)
 
 Utility software for unpacking Fatal Frame 2 Crimson Butterfly/零 ～紅い蝶～ archived files.
 
