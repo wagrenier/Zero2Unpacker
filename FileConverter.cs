@@ -9,7 +9,7 @@ namespace Zero2Unpacker
         {
             var orig = $"{zeroFile.Folder}{zeroFile.FileName}_{zeroFile.FileId}.{zeroFile.FileHeader.FileExtension}".Replace("/", "\\");
             var dest = $"{zeroFile.Folder}{zeroFile.FileName}_{zeroFile.FileId}.wav".Replace("/", "\\");
-            var args = $"/IF41000 /IC2 /II800 /IH0 /OTWAVU /OF41000 /OC2 /OI0 \"{orig}\" \"{dest}\"";
+            var args = $"/IF44100 /IC2 /II1000 /IH0 /OTWAVU /OF44100 /OC2 /OI0 \"{orig}\" \"{dest}\"";
 
             Console.WriteLine($"Extracting audio file: {zeroFile.FileName}.{zeroFile.FileHeader.FileExtension}");
             var process = new Process
@@ -25,7 +25,7 @@ namespace Zero2Unpacker
 
             process.Start();
 
-            if (!process.WaitForExit(5000))
+            if (!process.WaitForExit(10000))
             {
                 try
                 {
