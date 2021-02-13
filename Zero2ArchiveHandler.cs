@@ -396,9 +396,14 @@ namespace Zero2Unpacker
             }
         }
 
-        public void ConvertAudio()
+        public void ConvertAudio(object? filesObj)
         {
-            foreach (var audioFile in this.FileDb.AudioFiles)
+            if (!(filesObj is List<ZeroFile> audioFiles))
+            {
+                return;
+            }
+
+            foreach (var audioFile in audioFiles)
             {
                 FileConverter.ConvertStrToWav(audioFile);
             }

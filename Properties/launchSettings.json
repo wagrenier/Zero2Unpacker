@@ -2,7 +2,7 @@
   "profiles": {
     "Zero2Unpacker": {
       "commandName": "Project",
-      "commandLineArgs": "decompress -f \"D:/DecompressFiles\""
+      "commandLineArgs": "decompress -f \"D:/DecompressFiles\" -c"
     }
   }
 }

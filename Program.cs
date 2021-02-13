@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using CommandLine;
 
 namespace Zero2Unpacker
@@ -24,18 +25,18 @@ namespace Zero2Unpacker
 
             if (options.ConvertFiles)
             {
-                zero2ArchiveHandler.ConvertAudio();
+                zero2ArchiveHandler.MultiThreadAction(options.ThreadCount, zero2ArchiveHandler.FileDb.AudioFiles.ToList(), zero2ArchiveHandler.ConvertAudio);
             }
 
             watch.Stop();
 
             Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");
+
             return 0;
         }
 
         public static int ExtractWithExistingArchives(DecompressOptions options)
         {
-            
             var zero2ArchiveHandler = new Zero2ArchiveHandler(options.BinFileName, options.FolderName, options.DatabaseFile);
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -46,10 +47,11 @@ namespace Zero2Unpacker
 
             if (options.ConvertFiles)
             {
-                zero2ArchiveHandler.ConvertAudio();
+                zero2ArchiveHandler.MultiThreadAction(options.ThreadCount, zero2ArchiveHandler.FileDb.AudioFiles.ToList(), zero2ArchiveHandler.ConvertAudio);
             }
 
             watch.Stop();
+
             Console.WriteLine($"Total elapsed time: {watch.ElapsedMilliseconds}");
             
             return 0;
