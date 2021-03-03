@@ -51,7 +51,7 @@ jobs:
       uses: gittools/actions/gitversion/execute@v0.9.7
       with:
         useConfigFile: true
-        additionalArguments: '/.github'
+        configFilePath: ./.github/GitVersion.yml
       env:
         ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'   
     
