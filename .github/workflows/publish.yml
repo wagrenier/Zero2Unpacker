@@ -45,12 +45,13 @@ jobs:
         ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
       with:
           versionSpec: '5.x.x'
+          includePrerelease: true
           
     - name: Use GitVersion
       id: gitversion # step id used as reference for output values
       uses: gittools/actions/gitversion/execute@v0.9.7
       env:
-        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'   
     
     # Zips the binaries and required files
     - name: Zip App
