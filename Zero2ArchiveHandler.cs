@@ -203,7 +203,11 @@ namespace Zero2Unpacker
                     }
                     else
                     {
-                        writer?.Write(currentHeaderLookUp);
+                        if (zeroFile.FileHeader.FileExtension != "pss")
+                        {
+                            writer?.Write(currentHeaderLookUp);
+                        }
+                        
                         writer?.Close();
                     }
                 }
